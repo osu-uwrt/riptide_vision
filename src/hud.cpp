@@ -16,7 +16,7 @@ HUD::HUD() : nh("hud") {
   stereo_img_sub = nh.subscribe<sensor_msgs::Image>("/stereo/left/image_rect_color", 1, &HUD::StereoImgCB, this);
   down_img_sub = nh.subscribe<sensor_msgs::Image>("/downward/image_rect_color", 1, &HUD::DownwardImgCB, this);
   darknet_img_sub = nh.subscribe<sensor_msgs::Image>("/darknet_ros/detection_image", 1, &HUD::DarknetImgCB, this);
-  imu_sub = nh.subscribe<riptide_msgs::Imu>("/state/imu", 1, &HUD::ImuCB, this);
+  imu_sub = nh.subscribe<sensor_msgs::Imu>("/imu/data", 1, &HUD::ImuCB, this);
   depth_sub = nh.subscribe<riptide_msgs::Depth>("/state/depth", 1, &HUD::DepthCB, this);
   object_sub = nh.subscribe<riptide_msgs::Object>("/state/object", 1, &HUD::ObjectCB, this);
 
@@ -167,14 +167,19 @@ Mat HUD::CreateHUD(Mat &img) {
 }
 
 // Get current orientation and linear accel
-void HUD::ImuCB(const riptide_msgs::Imu::ConstPtr &imu_msg) {
-  euler_rpy.x = imu_msg->rpy_deg.x;
-  euler_rpy.y = imu_msg->rpy_deg.y;
-  euler_rpy.z = imu_msg->rpy_deg.z;
+void HUD::ImuCB(const sensor_msgs::Imu::ConstPtr &imu_msg) {
+  tf2::Quaternion quat;
+  tf2::fromMsg(imu_msg->orientation, quat);
+  double yaw, pitch, roll;
+  tf2::Matrix3x3 mat(quat);
+  mat.getRPY(roll, pitch, yaw);
+  euler_rpy.x = roll * 180 / M_PI;
+  euler_rpy.y = pitch * 180 / M_PI;
+  euler_rpy.z = yaw * 180 / M_PI;
 
-  linear_accel.x = imu_msg->linear_accel.x;
-  linear_accel.y = imu_msg->linear_accel.y;
-  linear_accel.z = imu_msg->linear_accel.z;
+  linear_accel.x = imu_msg->linear_acceleration.x;
+  linear_accel.y = imu_msg->linear_acceleration.y;
+  linear_accel.z = imu_msg->linear_acceleration.z;
 }
 
 // Get current depth

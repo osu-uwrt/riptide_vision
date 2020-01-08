@@ -21,6 +21,7 @@ find_package(catkin REQUIRED
     cv_bridge
     image_transport
     compressed_image_transport
+    tf2_geometry_msgs
 )
 
 catkin_package(INCLUDE_DIRS include)
