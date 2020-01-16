@@ -9,8 +9,8 @@ int main(int argc, char **argv)
 
 BBoxPub::BBoxPub() : nh("darknet_sim")
 {
-  bbox_pub = nh.advertise<darknet_ros_msgs::BoundingBoxes>("/darknet_ros/bounding_boxes", 1);
-  bbox_sub = nh.subscribe<darknet_ros_msgs::BoundingBox>("/test/bbox_input", 1, &BBoxPub::BBoxCB, this);
+  bbox_pub = nh.advertise<darknet_ros_msgs::BoundingBoxes>("darknet_ros/bounding_boxes", 1);
+  bbox_sub = nh.subscribe<darknet_ros_msgs::BoundingBox>("test/bbox_input", 1, &BBoxPub::BBoxCB, this);
 }
 
 void BBoxPub::BBoxCB(const darknet_ros_msgs::BoundingBox::ConstPtr &msg)

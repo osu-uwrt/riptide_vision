@@ -102,10 +102,10 @@ def imgCB(msg):
     
 
 rospy.init_node("pole_processor")
-rospy.Subscriber("/stereo/disparity", DisparityImage, imgCB)
-pub = rospy.Publisher("/state/object", Object, queue_size=5)
-img = rospy.Publisher("/debug/pole", Image, queue_size=5)
-img2 = rospy.Publisher("/debug/pole2", Image, queue_size=5)
+rospy.Subscriber("stereo/disparity", DisparityImage, imgCB)
+pub = rospy.Publisher("state/object", Object, queue_size=5)
+img = rospy.Publisher("debug/pole", Image, queue_size=5)
+img2 = rospy.Publisher("debug/pole2", Image, queue_size=5)
 bridge = CvBridge()
 rospy.spin()
 

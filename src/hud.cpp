@@ -13,27 +13,27 @@ int main(int argc, char** argv)
 
 // Heads Up Display
 HUD::HUD() : nh("hud") {
-  stereo_img_sub = nh.subscribe<sensor_msgs::Image>("/stereo/left/image_rect_color", 1, &HUD::StereoImgCB, this);
-  down_img_sub = nh.subscribe<sensor_msgs::Image>("/downward/image_rect_color", 1, &HUD::DownwardImgCB, this);
-  darknet_img_sub = nh.subscribe<sensor_msgs::Image>("/darknet_ros/detection_image", 1, &HUD::DarknetImgCB, this);
-  imu_sub = nh.subscribe<sensor_msgs::Imu>("/imu/data", 1, &HUD::ImuCB, this);
-  depth_sub = nh.subscribe<riptide_msgs::Depth>("/state/depth", 1, &HUD::DepthCB, this);
-  object_sub = nh.subscribe<riptide_msgs::Object>("/state/object", 1, &HUD::ObjectCB, this);
+  stereo_img_sub = nh.subscribe<sensor_msgs::Image>("stereo/left/image_rect_color", 1, &HUD::StereoImgCB, this);
+  down_img_sub = nh.subscribe<sensor_msgs::Image>("downward/image_rect_color", 1, &HUD::DownwardImgCB, this);
+  darknet_img_sub = nh.subscribe<sensor_msgs::Image>("darknet_ros/detection_image", 1, &HUD::DarknetImgCB, this);
+  imu_sub = nh.subscribe<sensor_msgs::Imu>("imu/data", 1, &HUD::ImuCB, this);
+  depth_sub = nh.subscribe<riptide_msgs::Depth>("state/depth", 1, &HUD::DepthCB, this);
+  object_sub = nh.subscribe<riptide_msgs::Object>("state/object", 1, &HUD::ObjectCB, this);
 
-  cmd_roll_sub = nh.subscribe<riptide_msgs::AttitudeCommand>("/command/roll", 1, &HUD::CmdRollCB, this);
-  cmd_pitch_sub = nh.subscribe<riptide_msgs::AttitudeCommand>("/command/pitch", 1, &HUD::CmdPitchCB, this);
-  cmd_yaw_sub = nh.subscribe<riptide_msgs::AttitudeCommand>("/command/yaw", 1, &HUD::CmdYawCB, this);
-  cmd_depth_sub = nh.subscribe<riptide_msgs::DepthCommand>("/command/depth", 1, &HUD::CmdDepthCB, this);
-  cmd_x_sub = nh.subscribe<std_msgs::Float64>("/command/force_x", 1, &HUD::ForceXCB, this);
-  cmd_y_sub = nh.subscribe<std_msgs::Float64>("/command/force_y", 1, &HUD::ForceYCB, this);
-  cmd_z_sub = nh.subscribe<std_msgs::Float64>("/command/force_z", 1, &HUD::ForceZCB, this);
-  reset_sub = nh.subscribe<riptide_msgs::ResetControls>("/controls/reset", 1, &HUD::ResetCB, this);
+  cmd_roll_sub = nh.subscribe<riptide_msgs::AttitudeCommand>("command/roll", 1, &HUD::CmdRollCB, this);
+  cmd_pitch_sub = nh.subscribe<riptide_msgs::AttitudeCommand>("command/pitch", 1, &HUD::CmdPitchCB, this);
+  cmd_yaw_sub = nh.subscribe<riptide_msgs::AttitudeCommand>("command/yaw", 1, &HUD::CmdYawCB, this);
+  cmd_depth_sub = nh.subscribe<riptide_msgs::DepthCommand>("command/depth", 1, &HUD::CmdDepthCB, this);
+  cmd_x_sub = nh.subscribe<std_msgs::Float64>("command/force_x", 1, &HUD::ForceXCB, this);
+  cmd_y_sub = nh.subscribe<std_msgs::Float64>("command/force_y", 1, &HUD::ForceYCB, this);
+  cmd_z_sub = nh.subscribe<std_msgs::Float64>("command/force_z", 1, &HUD::ForceZCB, this);
+  reset_sub = nh.subscribe<riptide_msgs::ResetControls>("controls/reset", 1, &HUD::ResetCB, this);
 
   // Outputs
   image_transport::ImageTransport it(nh);
-  stereo_img_pub = it.advertise("/stereo/left/image_hud", 1);
-  down_img_pub = it.advertise("/downward/image_hud", 1);
-  darknet_img_pub = it.advertise("/darknet_ros/image_hud", 1);
+  stereo_img_pub = it.advertise("stereo/left/image_hud", 1);
+  down_img_pub = it.advertise("downward/image_hud", 1);
+  darknet_img_pub = it.advertise("darknet_ros/image_hud", 1);
 
   top_margin = 120;
   num_rows = 4;

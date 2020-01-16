@@ -10,7 +10,7 @@ import lib
 # Inherits from TaskProcessor
 class GateProcessor(TaskProcessor):
     def __init__(self):
-        gate_pub = rospy.Publisher("/task/gate", GateData, queue_size=1)
+        gate_pub = rospy.Publisher("task/gate", GateData, queue_size=1)
         TaskProcessor.__init__(self, gate_pub)
 
     # Normal Processing
