@@ -7,7 +7,7 @@ int main(int argc, char** argv)
   ds.Loop();
 }
 
-DarknetSim::DarknetSim() : nh("darknet_sim") {
+DarknetSim::DarknetSim() : nh() {
   darknet_sim_pub = nh.advertise<darknet_ros_msgs::BoundingBoxes>("darknet_ros/bounding_boxes", 1);
 
   tasks_sim_file = rc::FILE_TASKS_SIM;

@@ -12,7 +12,7 @@ int main(int argc, char** argv)
 }
 
 // Heads Up Display
-HUD::HUD() : nh("hud") {
+HUD::HUD() : nh() {
   stereo_img_sub = nh.subscribe<sensor_msgs::Image>("stereo/left/image_rect_color", 1, &HUD::StereoImgCB, this);
   down_img_sub = nh.subscribe<sensor_msgs::Image>("downward/image_rect_color", 1, &HUD::DownwardImgCB, this);
   darknet_img_sub = nh.subscribe<sensor_msgs::Image>("darknet_ros/detection_image", 1, &HUD::DarknetImgCB, this);
