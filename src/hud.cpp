@@ -16,8 +16,7 @@ HUD::HUD() : nh() {
   stereo_img_sub = nh.subscribe<sensor_msgs::Image>("stereo/left/image_rect_color", 1, &HUD::StereoImgCB, this);
   down_img_sub = nh.subscribe<sensor_msgs::Image>("downward/image_rect_color", 1, &HUD::DownwardImgCB, this);
   darknet_img_sub = nh.subscribe<sensor_msgs::Image>("darknet_ros/detection_image", 1, &HUD::DarknetImgCB, this);
-  imu_sub = nh.subscribe<sensor_msgs::Imu>("imu/data", 1, &HUD::ImuCB, this);
-  depth_sub = nh.subscribe<riptide_msgs::Depth>("state/depth", 1, &HUD::DepthCB, this);
+  imu_sub = nh.subscribe<nav_msgs::Odometry>("odometry/filtered", 1, &HUD::OdomCB, this);
   object_sub = nh.subscribe<riptide_msgs::Object>("state/object", 1, &HUD::ObjectCB, this);
 
   cmd_roll_sub = nh.subscribe<riptide_msgs::AttitudeCommand>("command/roll", 1, &HUD::CmdRollCB, this);
@@ -90,9 +89,11 @@ void HUD::StereoImgCB(const sensor_msgs::ImageConstPtr& msg) {
       cv::rectangle(cv_ptr->image, rect, cv::Scalar(0, 255, 0));
     }*/
 
-    Mat img = HUD::CreateHUD(cv_ptr->image);
-    sensor_msgs::ImagePtr out_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", img).toImageMsg();
-    stereo_img_pub.publish(out_msg);
+    if (stereo_img_pub.getNumSubscribers() > 0) {
+      Mat img = HUD::CreateHUD(cv_ptr->image);
+      sensor_msgs::ImagePtr out_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", img).toImageMsg();
+      stereo_img_pub.publish(out_msg);
+    }
   }
 }
 
@@ -112,9 +113,11 @@ void HUD::DownwardImgCB(const sensor_msgs::ImageConstPtr& msg) {
       return;
     }
 
-    Mat img = HUD::CreateHUD(cv_ptr->image);
-    sensor_msgs::ImagePtr out_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", img).toImageMsg();
-    down_img_pub.publish(out_msg);
+    if (down_img_pub.getNumSubscribers() > 0) {
+      Mat img = HUD::CreateHUD(cv_ptr->image);
+      sensor_msgs::ImagePtr out_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", img).toImageMsg();
+      down_img_pub.publish(out_msg);
+    }
   }
 }
 
@@ -130,9 +133,11 @@ void HUD::DarknetImgCB(const sensor_msgs::ImageConstPtr& msg){
       return;
     }
 
-    Mat img = HUD::CreateHUD(cv_ptr->image);
-    sensor_msgs::ImagePtr out_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", img).toImageMsg();
-    darknet_img_pub.publish(out_msg);
+    if (darknet_img_pub.getNumSubscribers() > 0) {
+      Mat img = HUD::CreateHUD(cv_ptr->image);
+      sensor_msgs::ImagePtr out_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", img).toImageMsg();
+      darknet_img_pub.publish(out_msg);
+    }
   }
 }
 
@@ -166,30 +171,22 @@ Mat HUD::CreateHUD(Mat &img) {
   return hud;
 }
 
-// Get current orientation and linear accel
-void HUD::ImuCB(const sensor_msgs::Imu::ConstPtr &imu_msg) {
+// Get current depth
+void HUD::OdomCB(const nav_msgs::Odometry::ConstPtr &odom_msg) {
+  depth = odom_msg->pose.pose.position.z;
   tf2::Quaternion quat;
-  tf2::fromMsg(imu_msg->orientation, quat);
+  tf2::fromMsg(odom_msg->pose.pose.orientation, quat);
   double yaw, pitch, roll;
   tf2::Matrix3x3 mat(quat);
   mat.getRPY(roll, pitch, yaw);
   euler_rpy.x = roll * 180 / M_PI;
   euler_rpy.y = pitch * 180 / M_PI;
   euler_rpy.z = yaw * 180 / M_PI;
-
-  linear_accel.x = imu_msg->linear_acceleration.x;
-  linear_accel.y = imu_msg->linear_acceleration.y;
-  linear_accel.z = imu_msg->linear_acceleration.z;
 }
 
 // Get current depth
 void HUD::ResetCB(const riptide_msgs::ResetControls::ConstPtr &reset_msg) {
   reset = reset_msg->reset_pwm;
-}
-
-// Get current depth
-void HUD::DepthCB(const riptide_msgs::Depth::ConstPtr &depth_msg) {
-  depth = depth_msg->depth;
 }
 
 void HUD::CmdRollCB(const riptide_msgs::AttitudeCommand::ConstPtr& cmd_msg) {
