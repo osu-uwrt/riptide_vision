@@ -18,9 +18,9 @@ def cameraSelectionCb(msg):
         rospy.loginfo("Setting camera: %d", msg.data)
         cameraSub.unregister()
         if msg.data == 0:
-            cameraSub = rospy.Subscriber("/stereo/left/image_rect_color", Image, cameraCb)
+            cameraSub = rospy.Subscriber("stereo/left/image_rect_color", Image, cameraCb)
         else:
-            cameraSub = rospy.Subscriber("/downward/image_rect_color", Image, cameraCb)
+            cameraSub = rospy.Subscriber("downward/image_rect_color", Image, cameraCb)
         currentCam = msg.data
 
 def bboxCb(msg):
@@ -37,10 +37,10 @@ if __name__ == '__main__':
     rospy.init_node("darknet_processor")
 
     # Set subscribers
-    rospy.Subscriber("/command/camera", Int8, cameraSelectionCb)
-    rospy.Subscriber("/darknet_ros/bounding_boxes", BoundingBoxes, bboxCb)
-    cameraPub = rospy.Publisher("/darknet_ros/input_image", Image, queue_size=1)
-    bboxPub = rospy.Publisher("/state/bboxes", BoundingBoxes, queue_size=1)
-    cameraSub = rospy.Subscriber("/stereo/left/image_rect_color", Image, cameraCb)
+    rospy.Subscriber("command/camera", Int8, cameraSelectionCb)
+    rospy.Subscriber("darknet_ros/bounding_boxes", BoundingBoxes, bboxCb)
+    cameraPub = rospy.Publisher("darknet_ros/input_image", Image, queue_size=1)
+    bboxPub = rospy.Publisher("state/bboxes", BoundingBoxes, queue_size=1)
+    cameraSub = rospy.Subscriber("stereo/left/image_rect_color", Image, cameraCb)
 
     rospy.spin()
