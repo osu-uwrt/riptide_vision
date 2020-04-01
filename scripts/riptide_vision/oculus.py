@@ -23,9 +23,9 @@ class Oculus:
     MODE_POLE = 1           # Detect pole mode
 
     def __init__(self):
-        self.image_pub = rospy.Publisher("/forward/processed/compressed", CompressedImage, queue_size=1)
-        self.alignment_pub = rospy.Publisher("/task/gate/alignment", TaskAlignment, queue_size=1)
-        self.fwd_sub = rospy.Subscriber("/stereo/left/image_raw", Image, self.image_callback, queue_size=1)
+        self.image_pub = rospy.Publisher("forward/processed/compressed", CompressedImage, queue_size=1)
+        self.alignment_pub = rospy.Publisher("task/gate/alignment", TaskAlignment, queue_size=1)
+        self.fwd_sub = rospy.Subscriber("stereo/left/image_raw", Image, self.image_callback, queue_size=1)
         self.bridge = CvBridge()
         self.prev_pos = list()
         self.mode = self.MODE_NONE

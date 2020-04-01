@@ -7,16 +7,16 @@
 #include "geometry_msgs/Vector3.h"
 #include "geometry_msgs/Accel.h"
 #include "sensor_msgs/image_encodings.h"
+#include "nav_msgs/Odometry.h"
 #include "std_msgs/Float64.h"
-#include "riptide_msgs/Imu.h"
 #include "riptide_msgs/AttitudeCommand.h"
 #include "riptide_msgs/DepthCommand.h"
-#include "riptide_msgs/Depth.h"
 #include "riptide_msgs/Object.h"
 #include "opencv2/opencv.hpp"
 #include "cv_bridge/cv_bridge.h"
 #include "image_transport/image_transport.h"
 #include "riptide_msgs/ResetControls.h"
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 using namespace cv;
 using namespace std;
 
@@ -45,9 +45,8 @@ class HUD
   void DarknetImgCB(const sensor_msgs::ImageConstPtr& msg);
   Mat CreateHUD(Mat &img);
 
-  void ImuCB(const riptide_msgs::Imu::ConstPtr& imu_msg);
+  void OdomCB(const nav_msgs::Odometry::ConstPtr& odom_msg);
   void ResetCB(const riptide_msgs::ResetControls::ConstPtr &reset_msg);
-  void DepthCB(const riptide_msgs::Depth::ConstPtr &depth_msg);
   void CmdRollCB(const riptide_msgs::AttitudeCommand::ConstPtr& cmd_msg);
   void CmdPitchCB(const riptide_msgs::AttitudeCommand::ConstPtr& cmd_msg);
   void CmdYawCB(const riptide_msgs::AttitudeCommand::ConstPtr& cmd_msg);
