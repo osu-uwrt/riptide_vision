@@ -1,0 +1,22 @@
+<launch>
+  
+  <machine address="jetson" name="jetson" user="ros" env-loader="~/osu-uwrt/riptide_software/src/riptide_utilities/baycat_master.sh"/>
+	<arg name="machine_name" default="jetson"/>
+
+  <!-- Config and weights folder -->
+  <arg name="jetson_vision"           value="/home/ros/ssd/osu-uwrt/riptide_software/src/riptide_vision" />
+  <arg name="jetson_weights_path"     value="$(arg jetson_vision)/weights" />
+  <arg name="jetson_config_path"      value="$(arg jetson_vision)/cfg"/>
+
+  <!-- Load parameters -->
+  <rosparam command="load" ns="darknet_ros" file="$(find riptide_vision)/cfg/darknet_params.yaml"/>
+  <rosparam command="load" ns="darknet_ros" file="$(find riptide_vision)/cfg/darknet_model.yaml"/>
+
+  <!-- Start darknet and ros wrapper -->
+  <node machine="$(arg machine_name)" pkg="darknet_ros" type="darknet_ros" name="darknet_ros" output="screen" launch-prefix="$(arg launch_prefix)">
+    <param name="weights_path"          value="$(arg jetson_weights_path)" />
+    <param name="config_path"           value="$(arg jetson_config_path)" />
+  </node>
+  <node machine="$(arg machine_name)" pkg="riptide_vision" type="darknet_processor.py" name="darkent_processor" output="screen" />
+
+</launch>
