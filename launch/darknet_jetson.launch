@@ -13,7 +13,7 @@
   <rosparam command="load" ns="darknet_ros" file="$(find riptide_vision)/cfg/darknet_model.yaml"/>
 
   <!-- Start darknet and ros wrapper -->
-  <node machine="$(arg machine_name)" pkg="darknet_ros" type="darknet_ros" name="darknet_ros" output="screen" launch-prefix="$(arg launch_prefix)">
+  <node machine="$(arg machine_name)" pkg="darknet_ros" type="darknet_ros" name="darknet_ros" output="screen" >
     <param name="weights_path"          value="$(arg jetson_weights_path)" />
     <param name="config_path"           value="$(arg jetson_config_path)" />
   </node>
