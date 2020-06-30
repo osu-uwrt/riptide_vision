@@ -1,4 +1,10 @@
 <launch>
-  <include file="$(find riptide_vision)/launch/hud.launch" />
-  <include file="$(find riptide_vision)/launch/darknet.launch" />
+  <arg name="vision_computer" default="local" />
+
+  <include file="$(find riptide_vision)/launch/hud.launch">
+    <arg name="vision_computer" value="$(arg vision_computer)" />
+  </include>
+  <include file="$(find riptide_vision)/launch/darknet.launch">
+    <arg name="vision_computer" value="$(arg vision_computer)" />
+  </include>
 </launch>
