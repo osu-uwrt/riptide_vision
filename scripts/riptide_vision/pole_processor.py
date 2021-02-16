@@ -8,30 +8,27 @@ import time
 import numpy as np
 import math
 
-from task_processor import TaskProcessor
 from riptide_msgs.msg import PoleData, BoundingBox, Object
-from riptide_vision import RiptideVision
 from geometry_msgs.msg import Point
 from stereo_msgs.msg import DisparityImage
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CameraInfo
 from std_msgs.msg import Header
+
 
 
 
 def imgCB(msg):
     global bridge
 
-    start = time.time()
     try:
         cv_image = bridge.imgmsg_to_cv2(msg.image)
     except CvBridgeError as e:
         print(e)
 
     (rows,cols) = cv_image.shape
-        
+
+    # Add up all the pixels in each column
     integral = cv2.integral(cv_image)
-
-
     score_img = np.zeros((1,cols,1), np.float32)
     x = 0
     maxScore = 0
@@ -44,27 +41,37 @@ def imgCB(msg):
             score = 0
         score_img[0,c] = score
 
+    column_pub.publish(bridge.cv2_to_imgmsg(score_img))
+
+    # Threshold only the pixels more than 2.5 std deviations above the mean
     [mean, std] = cv2.meanStdDev(score_img)
     _, thresh = cv2.threshold(score_img, mean+2.5*std, 500000, cv2.THRESH_TOZERO)
 
+    # Fill in the gaps
     kernel = np.ones((1,15),np.float32)
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
     thresh = thresh / thresh.max() * 255
     thresh = thresh.astype(np.uint8)
 
-    im2, contours,hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    thresh_pub.publish(bridge.cv2_to_imgmsg(thresh))
+
+    # Find each blob in the threshold image
+    _, contours,_ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
 
-    img2.publish(msg.image)
+    original_pub.publish(msg.image)
 
+    # If we have at least one contour in our threshold image
     if len(contours) != 0:
-        #find the biggest area
+        # Find the biggest area. Turns out all contours have an area of 0 so it picks a random one.
+        # It works so I'm not changing it
         c = max(contours, key = cv2.contourArea)
 
         x,y,w,h = cv2.boundingRect(c)
         
         if w > 15:
 
+            # Select the sample region of original image to determine distance
             sample_region = cv_image[rows*1/4:rows*3/4, x:x+w].reshape((-1,1))
             
             # Define criteria = ( type, max_iter = 10 , epsilon = 1.0 )
@@ -76,36 +83,62 @@ def imgCB(msg):
             # Apply KMeans
             _,labels,centers = cv2.kmeans(sample_region,4,None,criteria,10,flags)
 
+            # Find which disparity is the most common in the sample region
             labels = [l[0] for l in labels]
             maxLabel = max(set(labels), key=labels.count)
             disparity = centers[maxLabel][0]
+
+            # If negative, look for next most often
             if disparity < 0:
                 labels = [l for l in labels if l != maxLabel]
                 maxLabel = max(set(labels), key=labels.count)
                 disparity = centers[maxLabel][0]
 
-            depth = msg.f * msg.T / disparity
+            # Find the distance from camera in meters
+            z = msg.f * msg.T / disparity
 
-            img.publish(bridge.cv2_to_imgmsg(thresh))
-            head = Header()
-            head.stamp = rospy.Time.now()
-            center = Point(depth, (x+w/2) - cols/2, 0)
-            pub.publish(head, "pole", w, rows, center)
+            # Extract camera matrix parameters
+            fx = k[0, 0]
+            fy = k[1, 1]
+            cx = k[0, 2]
+            cy = k[1, 2]
+
+            # Compute the camera-frame coordinates. https://medium.com/yodayoda/from-depth-map-to-point-cloud-7473721d3f
+            start_vector = np.array([x + w/2, 0, 1, 1/z]).T
+
+            k_inv_eff = np.array([[1/fx, 0, -cx/fx, 0],
+                                  [0, 1/fy, -cy/fy, 0],
+                                  [0, 0, 1, 0],
+                                  [0, 0, 0, 1]])
+
+            coordinates = z * np.dot(k_inv_eff, start_vector)
+
+            rospy.loginfo(str(coordinates))
+
+
+            output_pub.publish(bridge.cv2_to_imgmsg(thresh))
             return
     
     # else
-    img.publish(bridge.cv2_to_imgmsg(score_img))
+    output_pub.publish(bridge.cv2_to_imgmsg(score_img))
+
 
     
 
-
+def cam_info_cb(msg):
+    global k
+    k = np.array(msg.K).reshape((3,3))
     
 
 rospy.init_node("pole_processor")
 rospy.Subscriber("stereo/disparity", DisparityImage, imgCB)
-pub = rospy.Publisher("state/object", Object, queue_size=5)
-img = rospy.Publisher("debug/pole", Image, queue_size=5)
-img2 = rospy.Publisher("debug/pole2", Image, queue_size=5)
+rospy.Subscriber("stereo/left/camera_info", CameraInfo, cam_info_cb)
+
+
+column_pub = rospy.Publisher("debug/column", Image, queue_size=5)
+original_pub = rospy.Publisher("debug/original", Image, queue_size=5)
+thresh_pub = rospy.Publisher("debug/thresh", Image, queue_size=5)
+output_pub = rospy.Publisher("debug/output", Image, queue_size=5)
 bridge = CvBridge()
 rospy.spin()
 
