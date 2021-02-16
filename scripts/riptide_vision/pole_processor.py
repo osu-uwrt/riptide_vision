@@ -4,15 +4,12 @@ import rospy
 
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
-import time
 import numpy as np
-import math
 
-from riptide_msgs.msg import PoleData, BoundingBox, Object
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Quaternion, PoseStamped, Point, PoseWithCovarianceStamped
 from stereo_msgs.msg import DisparityImage
 from sensor_msgs.msg import Image, CameraInfo
-from std_msgs.msg import Header
+from vision_msgs.msg import ObjectHypothesisWithPose, Detection3D
 
 
 
@@ -115,14 +112,39 @@ def imgCB(msg):
 
             rospy.loginfo(str(coordinates))
 
+            hypothesis = ObjectHypothesisWithPose()
 
-            output_pub.publish(bridge.cv2_to_imgmsg(thresh))
+            hypothesis.pose.pose.position = Point(*coordinates[:3])
+            hypothesis.pose.pose.orientation = Quaternion(0, 0, 0, 1)
+
+            covariance = np.zeros((6,6))
+            covariance[0,0] = 0.1**2
+            covariance[1,1] = 10000
+            covariance[2,2] = 0.1**2
+            covariance[3,3] = 0
+            covariance[4,4] = 0
+            covariance[5,5] = 10000
+
+            hypothesis.pose.covariance = covariance.ravel()
+
+            hypothesis.id = 0
+            hypothesis.score = 0
+
+            msg = Detection3D()
+            msg.results.append(hypothesis)
+            msg.header.frame_id = "puddles/stereo/left_optical"	
+            msg.header.stamp = rospy.get_rostime()
+
+
+            pose = PoseWithCovarianceStamped()
+
+            pose.pose = hypothesis.pose
+            pose.header = msg.header
+
+            detection_pub.publish(msg)
+            pose_pub.publish(pose)
             return
     
-    # else
-    output_pub.publish(bridge.cv2_to_imgmsg(score_img))
-
-
     
 
 def cam_info_cb(msg):
@@ -138,7 +160,8 @@ rospy.Subscriber("stereo/left/camera_info", CameraInfo, cam_info_cb)
 column_pub = rospy.Publisher("debug/column", Image, queue_size=5)
 original_pub = rospy.Publisher("debug/original", Image, queue_size=5)
 thresh_pub = rospy.Publisher("debug/thresh", Image, queue_size=5)
-output_pub = rospy.Publisher("debug/output", Image, queue_size=5)
+detection_pub = rospy.Publisher("pole_detection", Detection3D, queue_size=5)
+pose_pub = rospy.Publisher("pole_pose", PoseWithCovarianceStamped, queue_size=5)
 bridge = CvBridge()
 rospy.spin()
 
