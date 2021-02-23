@@ -16,7 +16,6 @@ find_package(catkin REQUIRED
     roscpp
     roslint
     riptide_msgs
-    darknet_ros_msgs
     sensor_msgs
     cv_bridge
     image_transport
