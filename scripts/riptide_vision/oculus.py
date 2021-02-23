@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # oculus.py
 # Subscribes to camera output, publishes data about what it sees.
 # Determines what to look for based on what is being subscribed to.
