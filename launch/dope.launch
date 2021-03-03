@@ -1,0 +1,9 @@
+<launch>
+    <machine address="localhost" name="local" />
+    <arg name="vision_computer" default="local" />
+    <arg name="config" default="$(find riptide_vision)/cfg/config_pose.yaml" doc="Path to parameter config file"/>
+  
+    <node machine="$(arg vision_computer)" name="dope" pkg="dope" type="dope" output="screen" clear_params="true">
+        <rosparam file="$(arg config)"/>
+    </node>
+</launch>

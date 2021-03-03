@@ -4,4 +4,8 @@
   <include file="$(find riptide_vision)/launch/hud.launch">
     <arg name="vision_computer" value="$(arg vision_computer)" />
   </include>
+
+  <include file="$(find riptide_vision)/launch/dope.launch">
+    <arg name="vision_computer" value="$(arg vision_computer)" />
+  </include>
 </launch>
