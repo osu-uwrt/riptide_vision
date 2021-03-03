@@ -28,8 +28,6 @@ find_package(OpenCV REQUIRED) # To include, OpenCV, this MUST go BEFORE include_
 include_directories(include ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 roslint_cpp()
 
-cmake_host_system_information(RESULT _host_name QUERY HOSTNAME)
-
 
 add_executable(hud src/hud.cpp)
 target_link_libraries(hud ${catkin_LIBRARIES})
