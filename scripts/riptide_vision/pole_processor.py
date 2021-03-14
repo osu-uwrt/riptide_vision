@@ -115,7 +115,7 @@ def imgCB(msg):
 
             coordinates = z * np.dot(k_inv_eff, start_vector)
 
-            rospy.loginfo_throttle(.5, str(coordinates))
+            rospy.logdebug_throttle(.5, str(coordinates))
 
             hypothesis = ObjectHypothesisWithPose()
 
