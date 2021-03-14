@@ -1,10 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import rospy
 
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
 import numpy as np
+import time
 
 from geometry_msgs.msg import Quaternion, PoseStamped, Point, PoseWithCovarianceStamped
 from stereo_msgs.msg import DisparityImage
@@ -12,10 +13,14 @@ from sensor_msgs.msg import Image, CameraInfo
 from vision_msgs.msg import ObjectHypothesisWithPose, Detection3D
 
 
-
+last_time = 0
 
 def imgCB(msg):
     global bridge
+    global last_time
+
+    if time.time() - last_time < .5:
+        return
 
     try:
         cv_image = bridge.imgmsg_to_cv2(msg.image)
@@ -42,7 +47,7 @@ def imgCB(msg):
 
     # Threshold only the pixels more than 2.5 std deviations above the mean
     [mean, std] = cv2.meanStdDev(score_img)
-    _, thresh = cv2.threshold(score_img, mean+2.5*std, 500000, cv2.THRESH_TOZERO)
+    _, thresh = cv2.threshold(score_img, int(mean+2.5*std), 500000, cv2.THRESH_TOZERO)
 
     # Fill in the gaps
     kernel = np.ones((1,15),np.float32)
@@ -69,7 +74,7 @@ def imgCB(msg):
         if w > 15:
 
             # Select the sample region of original image to determine distance
-            sample_region = cv_image[rows*1/4:rows*3/4, x:x+w].reshape((-1,1))
+            sample_region = cv_image[rows//4:rows*3//4, x:x+w].reshape((-1,1))
             
             # Define criteria = ( type, max_iter = 10 , epsilon = 1.0 )
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
@@ -115,7 +120,7 @@ def imgCB(msg):
             hypothesis = ObjectHypothesisWithPose()
 
             hypothesis.pose.pose.position = Point(*coordinates[:3])
-            hypothesis.pose.pose.orientation = Quaternion(0, 0, 0, 1)
+            hypothesis.pose.pose.orientation = Quaternion(.5, -.5, .5, .5)
 
             covariance = np.zeros((6,6))
             covariance[0,0] = 0.1**2
@@ -143,7 +148,8 @@ def imgCB(msg):
 
             detection_pub.publish(msg)
             pose_pub.publish(pose)
-            return
+
+            last_time = time.time()
     
     
 
