@@ -4,8 +4,5 @@
   <include file="$(find riptide_vision)/launch/hud.launch">
     <arg name="vision_computer" value="$(arg vision_computer)" />
   </include>
-  <include file="$(find riptide_vision)/launch/darknet.launch">
-    <arg name="vision_computer" value="$(arg vision_computer)" />
-  </include>
   <node pkg="riptide_vision" type="pole_processor.py" name="pole_processor" output="screen" />
 </launch>
