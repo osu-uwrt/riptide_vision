@@ -14,10 +14,12 @@ from vision_msgs.msg import ObjectHypothesisWithPose, Detection3D
 
 
 last_time = 0
+color_img = None
 
-def imgCB(msg):
+def imgCb(msg):
     global bridge
     global last_time
+    global color_img
 
     if time.time() - last_time < .5:
         return
@@ -149,17 +151,32 @@ def imgCB(msg):
             detection_pub.publish(msg)
             pose_pub.publish(pose)
 
-            last_time = time.time()
+            if color_img is not None:
+                color_img = cv2.rectangle(color_img, (x, 0), (x+w, rows), (0, 255, 0), 1)
+
+    last_time = time.time()
+    if color_img is not None:
+        img_pub.publish(bridge.cv2_to_imgmsg(color_img, encoding="rgb8"))
     
     
 
 def cam_info_cb(msg):
     global k
     k = np.array(msg.K).reshape((3,3))
+
+def colorImgCb(msg):
+    global color_img
+
+    try:
+        color_img = bridge.imgmsg_to_cv2(msg)
+    except CvBridgeError as e:
+        print(e)
+
     
 
 rospy.init_node("pole_processor")
-rospy.Subscriber("stereo/disparity", DisparityImage, imgCB)
+rospy.Subscriber("stereo/disparity", DisparityImage, imgCb)
+rospy.Subscriber("stereo/left/image_rect_color", Image, colorImgCb)
 rospy.Subscriber("stereo/left/camera_info", CameraInfo, cam_info_cb)
 
 
@@ -168,6 +185,7 @@ original_pub = rospy.Publisher("debug/original", Image, queue_size=5)
 thresh_pub = rospy.Publisher("debug/thresh", Image, queue_size=5)
 detection_pub = rospy.Publisher("pole_detection", Detection3D, queue_size=5)
 pose_pub = rospy.Publisher("pole_pose", PoseWithCovarianceStamped, queue_size=5)
+img_pub = rospy.Publisher("pole_img", Image, queue_size=5)
 bridge = CvBridge()
 rospy.spin()
 
