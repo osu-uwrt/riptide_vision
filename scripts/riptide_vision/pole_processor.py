@@ -24,8 +24,13 @@ def imgCb(msg):
     if time.time() - last_time < .5:
         return
 
+    img_msg = msg
+    if hasattr(msg, "image"):
+        img_msg = msg.image
+
+
     try:
-        cv_image = bridge.imgmsg_to_cv2(msg.image)
+        cv_image = bridge.imgmsg_to_cv2(img_msg)
     except CvBridgeError as e:
         print(e)
 
@@ -63,7 +68,7 @@ def imgCb(msg):
     _, contours,_ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
 
-    original_pub.publish(msg.image)
+    original_pub.publish(img_msg)
 
     # If we have at least one contour in our threshold image
     if len(contours) != 0:
@@ -99,7 +104,7 @@ def imgCb(msg):
                 disparity = centers[maxLabel][0]
 
             # Find the distance from camera in meters
-            z = msg.f * msg.T / disparity
+            z = f * t / disparity
 
             # Extract camera matrix parameters
             fx = k[0, 0]
@@ -132,7 +137,7 @@ def imgCb(msg):
             covariance[4,4] = 0
             covariance[5,5] = 10000
 
-            hypothesis.pose.covariance = covariance.ravel()
+            hypothesis.pose.covariance = list(covariance.ravel())
 
             hypothesis.id = 0
             hypothesis.score = 0
@@ -162,7 +167,11 @@ def imgCb(msg):
 
 def cam_info_cb(msg):
     global k
+    global t
+    global f
     k = np.array(msg.K).reshape((3,3))
+    f = msg.P[0]
+    t = -msg.P[3]/f
 
 def colorImgCb(msg):
     global color_img
@@ -176,6 +185,7 @@ def colorImgCb(msg):
 
 rospy.init_node("pole_processor")
 rospy.Subscriber("stereo/disparity", DisparityImage, imgCb)
+rospy.Subscriber("stereo/depth", Image, imgCb)
 rospy.Subscriber("stereo/left/image_rect_color", Image, colorImgCb)
 rospy.Subscriber("stereo/left/camera_info", CameraInfo, cam_info_cb)
 
