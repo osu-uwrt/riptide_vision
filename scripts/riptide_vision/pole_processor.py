@@ -20,6 +20,8 @@ def imgCb(msg):
     global bridge
     global last_time
     global color_img
+    global f
+    global t
 
     if time.time() - last_time < .5:
         return
@@ -81,7 +83,7 @@ def imgCb(msg):
         if w > 15:
 
             # Select the sample region of original image to determine distance
-            sample_region = cv_image[rows//4:rows*3//4, x:x+w].reshape((-1,1))
+            sample_region = cv_image[rows//4:rows*3//4, x:x+w].ravel()
             
             # Define criteria = ( type, max_iter = 10 , epsilon = 1.0 )
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
@@ -161,7 +163,7 @@ def imgCb(msg):
 
     last_time = time.time()
     if color_img is not None:
-        img_pub.publish(bridge.cv2_to_imgmsg(color_img, encoding="rgb8"))
+        img_pub.publish(bridge.cv2_to_imgmsg(color_img, encoding="bgr8"))
     
     
 
@@ -171,7 +173,7 @@ def cam_info_cb(msg):
     global f
     k = np.array(msg.K).reshape((3,3))
     f = msg.P[0]
-    t = -msg.P[3]/f
+    t = .126    # For MYNT camera. Had a weird issue
 
 def colorImgCb(msg):
     global color_img
@@ -185,7 +187,6 @@ def colorImgCb(msg):
 
 rospy.init_node("pole_processor")
 rospy.Subscriber("stereo/disparity", DisparityImage, imgCb)
-rospy.Subscriber("stereo/depth", Image, imgCb)
 rospy.Subscriber("stereo/left/image_rect_color", Image, colorImgCb)
 rospy.Subscriber("stereo/left/camera_info", CameraInfo, cam_info_cb)
 
