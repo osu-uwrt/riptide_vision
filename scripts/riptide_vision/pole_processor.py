@@ -186,9 +186,9 @@ def colorImgCb(msg):
     
 
 rospy.init_node("pole_processor")
-rospy.Subscriber("stereo/disparity", DisparityImage, imgCb)
-rospy.Subscriber("stereo/left/image_rect_color", Image, colorImgCb)
-rospy.Subscriber("stereo/left/camera_info", CameraInfo, cam_info_cb)
+rospy.Subscriber("stereo/disparity", DisparityImage, imgCb, queue_size=1)
+rospy.Subscriber("stereo/left/image_rect_color", Image, colorImgCb, queue_size=1)
+rospy.Subscriber("stereo/left/camera_info", CameraInfo, cam_info_cb, queue_size=1)
 
 
 column_pub = rospy.Publisher("debug/column", Image, queue_size=5)
