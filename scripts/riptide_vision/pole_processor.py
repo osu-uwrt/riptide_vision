@@ -67,7 +67,7 @@ def imgCb(msg):
     thresh_pub.publish(bridge.cv2_to_imgmsg(thresh))
 
     # Find each blob in the threshold image
-    _, contours,_ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    contours,_ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
 
     original_pub.publish(img_msg)
