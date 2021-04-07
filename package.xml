@@ -33,6 +33,7 @@
   <run_depend>cv_bridge</run_depend>
   <run_depend>image_transport</run_depend>
   <run_depend>compressed_image_transport</run_depend>
+  <run_depend>vision_msgs</run_depend>
 
   <export>
   </export>
