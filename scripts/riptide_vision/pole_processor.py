@@ -61,6 +61,8 @@ def imgCb(msg):
     # Fill in the gaps
     kernel = np.ones((1,15),np.float32)
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+    if thresh.max() == 0:
+        return
     thresh = thresh / thresh.max() * 255
     thresh = thresh.astype(np.uint8)
 
