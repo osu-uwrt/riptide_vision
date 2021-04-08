@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(riptide_vision)
 #set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 add_compile_options(-std=c++11)
@@ -16,7 +16,6 @@ find_package(catkin REQUIRED
     roscpp
     roslint
     riptide_msgs
-    darknet_ros_msgs
     sensor_msgs
     cv_bridge
     image_transport
