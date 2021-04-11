@@ -36,6 +36,15 @@ def imgCb(msg):
     except CvBridgeError as e:
         print(e)
 
+
+    if np.min(cv_image) == -1:
+        rospy.loginfo("Disparity")
+    else:
+        rospy.loginfo("Depth")
+        cv_image = f * t / (cv_image / 1000.0)
+        cv_image = np.nan_to_num(cv_image, posinf=-1)
+        
+        
     (rows,cols) = cv_image.shape
 
     # Add up all the pixels in each column
@@ -85,7 +94,7 @@ def imgCb(msg):
         if w > 15:
 
             # Select the sample region of original image to determine distance
-            sample_region = cv_image[rows//4:rows*3//4, x:x+w].ravel()
+            sample_region = cv_image[rows//4:rows*3//4, x:x+w].ravel().astype(np.float32)
             
             # Define criteria = ( type, max_iter = 10 , epsilon = 1.0 )
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
@@ -189,6 +198,7 @@ def colorImgCb(msg):
 
 rospy.init_node("pole_processor")
 rospy.Subscriber("stereo/disparity", DisparityImage, imgCb, queue_size=1)
+rospy.Subscriber("stereo/depth/image_rect_color", Image, imgCb, queue_size=1)
 rospy.Subscriber("stereo/left/image_rect_color", Image, colorImgCb, queue_size=1)
 rospy.Subscriber("stereo/left/camera_info", CameraInfo, cam_info_cb, queue_size=1)
 
