@@ -37,10 +37,7 @@ def imgCb(msg):
         print(e)
 
 
-    if np.min(cv_image) == -1:
-        rospy.loginfo("Disparity")
-    else:
-        rospy.loginfo("Depth")
+    if np.min(cv_image) != -1:
         cv_image = f * t / (cv_image / 1000.0)
         cv_image = np.nan_to_num(cv_image, posinf=-1)
         

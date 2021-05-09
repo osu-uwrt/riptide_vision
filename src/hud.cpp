@@ -17,16 +17,9 @@ HUD::HUD() : nh() {
   down_img_sub = nh.subscribe<sensor_msgs::Image>("downward/image_rect_color", 1, &HUD::DownwardImgCB, this);
   darknet_img_sub = nh.subscribe<sensor_msgs::Image>("darknet_ros/detection_image", 1, &HUD::DarknetImgCB, this);
   imu_sub = nh.subscribe<nav_msgs::Odometry>("odometry/filtered", 1, &HUD::OdomCB, this);
-  object_sub = nh.subscribe<riptide_msgs::Object>("state/object", 1, &HUD::ObjectCB, this);
-
-  cmd_roll_sub = nh.subscribe<riptide_msgs::AttitudeCommand>("command/roll", 1, &HUD::CmdRollCB, this);
-  cmd_pitch_sub = nh.subscribe<riptide_msgs::AttitudeCommand>("command/pitch", 1, &HUD::CmdPitchCB, this);
-  cmd_yaw_sub = nh.subscribe<riptide_msgs::AttitudeCommand>("command/yaw", 1, &HUD::CmdYawCB, this);
-  cmd_depth_sub = nh.subscribe<riptide_msgs::DepthCommand>("command/depth", 1, &HUD::CmdDepthCB, this);
   cmd_x_sub = nh.subscribe<std_msgs::Float64>("command/force_x", 1, &HUD::ForceXCB, this);
   cmd_y_sub = nh.subscribe<std_msgs::Float64>("command/force_y", 1, &HUD::ForceYCB, this);
   cmd_z_sub = nh.subscribe<std_msgs::Float64>("command/force_z", 1, &HUD::ForceZCB, this);
-  reset_sub = nh.subscribe<riptide_msgs::ResetControls>("controls/reset", 1, &HUD::ResetCB, this);
 
   // Outputs
   image_transport::ImageTransport it(nh);
@@ -95,10 +88,6 @@ void HUD::StereoImgCB(const sensor_msgs::ImageConstPtr& msg) {
       stereo_img_pub.publish(out_msg);
     }
   }
-}
-
-void HUD::ObjectCB(const riptide_msgs::Object::ConstPtr& msg) {
-  object = *msg;
 }
 
 void HUD::DownwardImgCB(const sensor_msgs::ImageConstPtr& msg) {
@@ -184,30 +173,6 @@ void HUD::OdomCB(const nav_msgs::Odometry::ConstPtr &odom_msg) {
   euler_rpy.z = yaw * 180 / M_PI;
 }
 
-// Get current depth
-void HUD::ResetCB(const riptide_msgs::ResetControls::ConstPtr &reset_msg) {
-  reset = reset_msg->reset_pwm;
-}
-
-void HUD::CmdRollCB(const riptide_msgs::AttitudeCommand::ConstPtr& cmd_msg) {
-  if (cmd_msg->mode == cmd_msg->POSITION)
-    cmd_euler_rpy.x = cmd_msg->value;
-}
-
-void HUD::CmdPitchCB(const riptide_msgs::AttitudeCommand::ConstPtr& cmd_msg) {
-  if (cmd_msg->mode == cmd_msg->POSITION)
-    cmd_euler_rpy.y = cmd_msg->value;
-}
-
-void HUD::CmdYawCB(const riptide_msgs::AttitudeCommand::ConstPtr& cmd_msg) {
-  if (cmd_msg->mode == cmd_msg->POSITION)
-    cmd_euler_rpy.z = cmd_msg->value;
-}
-
-// Get command depth
-void HUD::CmdDepthCB(const riptide_msgs::DepthCommand::ConstPtr& cmd_msg) {
-  cmd_depth = cmd_msg->depth;
-}
 
 void HUD::ForceXCB(const std_msgs::Float64::ConstPtr& msg){
   cmd_x = msg->data;
