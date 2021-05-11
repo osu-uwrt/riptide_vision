@@ -171,7 +171,7 @@ def imgCb(msg):
 
     last_time = time.time()
     if color_img is not None:
-        img_pub.publish(bridge.cv2_to_imgmsg(color_img, encoding="bgr8"))
+        img_pub.publish(bridge.cv2_to_imgmsg(color_img, encoding="rgb8"))
     
     
 

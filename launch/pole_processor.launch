@@ -1,0 +1,5 @@
+<launch>
+  <arg name="robot" default="puddles" />
+
+  <node pkg="riptide_vision" type="pole_processor.py" name="pole_processor" output="screen" ns="$(arg robot)" />
+</launch>
