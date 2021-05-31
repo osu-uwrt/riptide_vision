@@ -6,5 +6,10 @@
         <node name="dope" pkg="dope" type="dope" output="screen" clear_params="true">
             <rosparam file="$(arg config)"/>
         </node>
+        <!-- This is only for using the compressed image on the 
+            topside computer. Needs to use compressed image. Get 
+            rid of this if you want a small speed up running sim or on robot-->
+        <node name="republish" type="republish" pkg="image_transport" output="screen" 
+            args="compressed in:=stereo/left/image_rect_color raw out:=dope/input_image" />
     </group>
 </launch>

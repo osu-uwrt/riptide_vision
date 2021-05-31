@@ -1,4 +1,4 @@
-topic_camera: "stereo/left/image_rect_color"
+topic_camera: "dope/input_image"
 topic_camera_info: "stereo/left/camera_info"
 topic_publishing: "dope"
 input_is_rectified: True   # Whether the input image is rectified (strongly suggested!)
@@ -10,6 +10,7 @@ weights: {
 }
 
 # Cuboid dimension in cm x,y,z
+# This value is important! If its off poses will be wrong
 dimensions: {
     "cutie": [50, 120, 1.2]
 }
