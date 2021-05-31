@@ -1,6 +1,0 @@
-<launch>
-  <machine address="localhost" name="local" />
-  <arg name="vision_computer" default="local" />
-
-  <node machine="$(arg vision_computer)" pkg="riptide_vision" type="hud" name="hud" output="screen" />
-</launch>

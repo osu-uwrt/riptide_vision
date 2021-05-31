@@ -1,4 +1,0 @@
-<launch>
-  <arg name="vision_computer" default="local" />
-
-</launch>
