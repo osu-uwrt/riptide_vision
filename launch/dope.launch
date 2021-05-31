@@ -1,0 +1,10 @@
+<launch>
+  <arg name="config" default="$(find riptide_vision)/config/config_pose.yaml" doc="Path to parameter config file"/>
+
+  
+    <group ns="puddles">
+        <node name="dope" pkg="dope" type="dope" output="screen" clear_params="true">
+            <rosparam file="$(arg config)"/>
+        </node>
+    </group>
+</launch>
