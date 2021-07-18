@@ -6,36 +6,45 @@ downscale_height: 400      # if the input image is larger than this, scale it do
 
 # Comment any of these lines to prevent detection / pose estimation of that object
 weights: {
-    "cutie":"package://riptide_vision/weights/net_cutie_60.pth",
+    # "cutie":"package://riptide_vision/weights/net_cutie_60.pth",
+    "alphabet_soup": "<path to alphabet soup weights>",
 }
 
 # Cuboid dimension in cm x,y,z
 # This value is important! If its off poses will be wrong
 dimensions: {
-    "cutie": [50, 120, 1.2]
+    # "cutie": [50, 120, 1.2]
+    "alphabet_soup": [6.7659378051757813,10.185500144958496,6.771425724029541]
 }
 
 class_ids: {
-    "cutie": 1
+    # "cutie": 1
+    "alphabet_soup": 1
 }
 
 draw_colors: {
-    "cutie": [13, 255, 128]  # green
+    # "cutie": [13, 255, 128]  # green
+    "alphabet_soup":[13, 255, 128]
 }
 
 # optional: provide a transform that is applied to the pose returned by DOPE
 model_transforms: {
-   "cutie": [[ 1,  0,  0,  0],
-             [ 0,  0,  -1,  0],
-             [ 0,  1,  0,  0],
-             [ 0,  0,  0,  1]]
+#    "cutie": [[ 1,  0,  0,  0],
+#              [ 0,  0,  -1,  0],
+#              [ 0,  1,  0,  0],
+#              [ 0,  0,  0,  1]]
+   "alphabet_soup": [[ 1,  0,  0,  0],
+                    [ 0,  0,  -1,  0],
+                    [ 0,  1,  0,  0],
+                    [ 0,  0,  0,  1]]
 }
 
 # optional: if you provide a mesh of the object here, a mesh marker will be
 # published for visualization in RViz
 # You can use the nvdu_ycb tool to download the meshes: https://github.com/NVIDIA/Dataset_Utilities#nvdu_ycb
 meshes: {
-   "cutie": "package://riptide_gazebo/models/cutie/meshes/cutie.dae"
+#    "cutie": "package://riptide_gazebo/models/cutie/meshes/cutie.dae"
+    "alphabet_soup": "package://riptide_gazebo/models/alphabet_soup/meshes/textured.obj"
 }
 
 # optional: If the specified meshes are not in meters, provide a scale here (e.g. if the mesh is in centimeters, scale should be 0.01). default scale: 1.0.
@@ -47,6 +56,7 @@ mesh_scales: {
     "soup":    0.01,
     "sugar":   0.01,
     "bleach":  0.01,
+    "alphabet_soup": 0.01,
 }
 
 # Config params for DOPE
