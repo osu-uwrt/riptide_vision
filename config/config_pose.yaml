@@ -6,7 +6,7 @@ downscale_height: 400      # if the input image is larger than this, scale it do
 
 # Comment any of these lines to prevent detection / pose estimation of that object
 weights: {
-    "cutie":"package://riptide_vision/weights/net_cutie_60.pth",
+    "cutie":"package://riptide_vision/weights/net_cutie_96.pth",
 }
 
 # Cuboid dimension in cm x,y,z
