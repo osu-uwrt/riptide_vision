@@ -16,7 +16,12 @@ dimensions: {
 }
 
 class_ids: {
+    "gate" : 0
     "cutie": 1
+    "tommy": 2
+    "gman" : 3
+    "bootlegger" : 4
+    "badge" : 5
 }
 
 draw_colors: {
