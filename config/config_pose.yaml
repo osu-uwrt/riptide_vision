@@ -7,12 +7,16 @@ downscale_height: 400      # if the input image is larger than this, scale it do
 # Comment any of these lines to prevent detection / pose estimation of that object
 weights: {
     "cutie":"package://riptide_vision/weights/net_cutie_96.pth",
+    "bootlegger":"package://riptide_vision/weights/net_bootlegger_30.pth",
+    "gman":"package://riptide_vision/weights/net_bootlegger_30.pth"
 }
 
 # Cuboid dimension in cm x,y,z
 # This value is important! If its off poses will be wrong
 dimensions: {
-    "cutie": [50, 120, 1.2]
+    "cutie": [50, 120, 1.2],
+    "bootlegger": [1, 30, 15],
+    "gman": [1, 30, 15]
 }
 
 class_ids: {
@@ -25,7 +29,9 @@ class_ids: {
 }
 
 draw_colors: {
-    "cutie": [13, 255, 128]  # green
+    "cutie": [13, 255, 128],  # green
+    "bootlegger": [13, 255, 128]  # green
+    "gman": [13, 255, 128]  # green
 }
 
 # optional: provide a transform that is applied to the pose returned by DOPE
