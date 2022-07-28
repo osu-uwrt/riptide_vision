@@ -1,39 +1,18 @@
 <?xml version="1.0"?>
-<package>
-  <name>riptide_vision</name>
-  <version>0.0.17</version>
-  <description>Riptide's occipital lobe.</description>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>riptide_vision2</name>
+  <version>0.0.0</version>
+  <description>TODO: Package description</description>
+  <maintainer email="sketch0306@gmail.com">uwrt</maintainer>
+  <license>TODO: License declaration</license>
 
-  <maintainer email="justice.251@osu.edu">Benji Justice</maintainer>
-
-  <license>BSD</license>
-
-  <url type="website">http://go.osu.edu/uwrt</url>
-  <url type="repository">http://github.com/osu-uwrt/riptide-ros</url>
-
-  <author email="justice.251@osu.edu">Benji Justice</author>
-
-  <buildtool_depend>catkin</buildtool_depend>
-
-  <build_depend>riptide_msgs</build_depend>
-  <build_depend>rospy</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>roslint</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>cv_bridge</build_depend>
-  <build_depend>image_transport</build_depend>
-  <build_depend>tf2_geometry_msgs</build_depend>
-  <build_depend>compressed_image_transport</build_depend>
-
-  <run_depend>riptide_msgs</run_depend>
-  <run_depend>rospy</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>roslaunch</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>cv_bridge</run_depend>
-  <run_depend>image_transport</run_depend>
-  <run_depend>compressed_image_transport</run_depend>
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
 
   <export>
+    <build_type>ament_python</build_type>
   </export>
 </package>
