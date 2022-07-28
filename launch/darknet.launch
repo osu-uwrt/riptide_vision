@@ -1,9 +1,0 @@
-<launch>
-  <include file="$(find darknet_ros)/launch/darknet_ros.launch">
-    <arg name="yolo_weights_path" value="$(find riptide_vision)/weights" />
-    <arg name="yolo_config_path" value="$(find riptide_vision)/cfg" />
-    <arg name="ros_param_file" value="$(find riptide_vision)/cfg/darknet_params.yaml"/>
-    <arg name="network_param_file" value="$(find riptide_vision)/cfg/darknet_model.yaml"/>
-  </include>
-  <node pkg="riptide_vision" type="darknet_processor.py" name="darkent_processor" output="screen" />
-</launch>

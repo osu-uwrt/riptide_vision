@@ -1,0 +1,67 @@
+topic_camera: "dope/input_image"
+topic_camera_info: "stereo/left/camera_info"
+topic_publishing: "dope"
+input_is_rectified: True   # Whether the input image is rectified (strongly suggested!)
+downscale_height: 400      # if the input image is larger than this, scale it down to this pixel height
+
+# Comment any of these lines to prevent detection / pose estimation of that object
+weights: {
+    "cutie":"package://riptide_vision/weights/net_cutie_96.pth",
+    "bootlegger":"package://riptide_vision/weights/net_bootlegger_106.pth",
+    "gman":"package://riptide_vision/weights/net_gman_106.pth"
+}
+
+# Cuboid dimension in cm x,y,z
+# This value is important! If its off poses will be wrong
+dimensions: {
+    "cutie": [50, 120, 1.2],
+    "bootlegger": [1, 30, 15],
+    "gman": [1, 30, 15]
+}
+
+class_ids: {
+    "gate" : 0,
+    "cutie": 1,
+    "tommy": 2,
+    "gman" : 3,
+    "bootlegger" : 4,
+    "badge" : 5,
+}
+
+draw_colors: {
+    "cutie": [13, 255, 128],  # green
+    "bootlegger": [255, 0, 0],  # red
+    "gman": [0, 0, 255]  # blue
+}
+
+# optional: provide a transform that is applied to the pose returned by DOPE
+model_transforms: {
+   "cutie": [[ 1,  0,  0,  0],
+             [ 0,  0,  -1,  0],
+             [ 0,  1,  0,  0],
+             [ 0,  0,  0,  1]]
+}
+
+# optional: if you provide a mesh of the object here, a mesh marker will be
+# published for visualization in RViz
+# You can use the nvdu_ycb tool to download the meshes: https://github.com/NVIDIA/Dataset_Utilities#nvdu_ycb
+meshes: {
+   "cutie": "package://riptide_gazebo/models/cutie/meshes/cutie.dae"
+}
+
+# optional: If the specified meshes are not in meters, provide a scale here (e.g. if the mesh is in centimeters, scale should be 0.01). default scale: 1.0.
+mesh_scales: {
+    "cracker": 0.01,
+    "gelatin": 0.01,
+    "meat":    0.01,
+    "mustard": 0.01,
+    "soup":    0.01,
+    "sugar":   0.01,
+    "bleach":  0.01,
+}
+
+# Config params for DOPE
+thresh_angle: 0.5
+thresh_map: 0.01
+sigma: 3
+thresh_points: 0.1
