@@ -13,6 +13,7 @@ import pyzed.sl as sl
 #from sensor_msgs_py import point_cloud2 as pc2
 
 import torch
+from torch import hypot
 import torch.backends.cudnn as cudnn
 
 from yolov5_ros.models.common import DetectMultiBackend
@@ -28,8 +29,8 @@ from rclpy.node import Node
 from sensor_msgs.msg import Image, CameraInfo
 from stereo_msgs.msg import DisparityImage
 from bboxes_ex_msgs.msg import BoundingBoxes, BoundingBox
-from vision_msgs.msg import Detection3DArray, Detection3D, ObjectHypothesisWithPose
-from geometry_msgs.msg import Quaternion
+from vision_msgs.msg import Detection3DArray, Detection3D, ObjectHypothesisWithPose, ObjectHypothesis
+from geometry_msgs.msg import Quaternion, Point
 from std_msgs.msg import Header
 from cv_bridge import CvBridge
 import image_geometry
@@ -243,7 +244,7 @@ class yolov5_demo():
 
 class yolov5_ros(Node):
     def __init__(self):
-        super().__init__('riptide_vision2')
+        super().__init__('yolov5_ros')
 
         self.bridge = CvBridge()
 
@@ -303,11 +304,13 @@ class yolov5_ros(Node):
         
         # Create a InitParameters object and set configuration parameters
         init_params = sl.InitParameters()
-        init_params.camera_resolution = sl.RESOLUTION.HD1080
+        init_params.camera_resolution = sl.RESOLUTION.HD720
         init_params.coordinate_units = sl.UNIT.METER
         init_params.depth_mode = sl.DEPTH_MODE.ULTRA  # QUALITY
         init_params.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP
         init_params.depth_maximum_distance = 50
+        stream = sl.StreamingParameters()
+        stream.codec = sl.STREAMING_CODEC.H265 # Can be H264 or H265
 
         self.runtime_params = sl.RuntimeParameters()
         status = self.zed.open(init_params)
@@ -701,18 +704,30 @@ class yolov5_ros(Node):
                 object_id = obj.id # Get the object id
                 object_position = obj.position # Get the object position
                 object_tracking_state = obj.tracking_state # Get the tracking state of the object
-                if object_tracking_state == sl.OBJECT_TRACK_STATE.OK :
-                    print("Object {0} is tracked\n".format(object_id))
+                # if object_tracking_state == sl.OBJECT_TRACK_STATE.OK :
+                #     print("Object {0} is tracked\n".format(object_id))
                 detection = Detection3D()
                 detection.results = []
-                hypothesis = ObjectHypothesisWithPose()
-                hypothesis.id = 'this is the dope int id'
-                detection.results.append()
+                object_hypothesis = ObjectHypothesisWithPose()
+                object_hypothesis.hypothesis.class_id = 'test'
+                position = Point()
+                object_hypothesis.pose.pose.position = position
+                # print(obj.position)
+                LOGGER.info(obj.position)
+                # hypothesis = ObjectHypothesis()
+                # hyp.hypothesis.class_id = ids[idx]
+                # hyp.hypothesis.score = float(confidences[idx])
+                # hypothesis.id = 1
+                # object_hypothesis.hypothesis
+                # hypothesis.class_id = 1
+                # hypothesis.id = 'this is the dope int id'
+                detection.results.append(object_hypothesis)
+                detections.detections.append(detection)
 
 
 
             
-            # self.pub_det3d.publish()
+            self.pub_det3d.publish(detections)
 
 
             graberr = self.zed.grab(self.runtime_params) 
