@@ -243,7 +243,7 @@ class yolov5_demo():
 
 class yolov5_ros(Node):
     def __init__(self):
-        super().__init__('yolov5_ros')
+        super().__init__('riptide_vision2')
 
         self.bridge = CvBridge()
 

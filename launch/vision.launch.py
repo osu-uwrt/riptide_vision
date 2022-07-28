@@ -1,36 +1,21 @@
 import launch
-import launch.actions
-from ament_index_python.packages import get_package_share_directory
-import launch_ros.actions
 import os
-from launch.actions import DeclareLaunchArgument
+import launch_ros.actions
+from launch.actions import IncludeLaunchDescription
+from ament_index_python.packages import get_package_share_directory
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
-    # declare the launch args to read for this file
-    config = os.path.join(
-        get_package_share_directory('riptide_vision2'),
-        'config',
-        'config_pose.yaml'
-        )
+    riptide_vision_share_dir = get_package_share_directory('riptide_vision2')
+
+    riptide_vision = launch_ros.actions.Node(
+        package="riptide_vision2", executable="vision",
+        parameters=[
+                       {"weights":os.path.join(riptide_vision_share_dir,"weights/last.pt")},
+                       {"data":os.path.join(riptide_vision_share_dir,"config/pool.yaml")}
+                   ],
+    )
 
     return launch.LaunchDescription([
-        DeclareLaunchArgument(
-            "log_level", 
-            default_value="INFO",
-            description="log level to use",
-        ),
-
-        # create the nodes    
-        launch_ros.actions.Node(
-            package='riptide_vision2',
-            executable='vision',
-            name='riptide_vision2',
-            respawn=True,
-            output='screen',
-            
-            # use the parameters on the node
-            parameters = [
-                config
-            ]
-        )
+        riptide_vision,
     ])
