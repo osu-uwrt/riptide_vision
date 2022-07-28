@@ -326,7 +326,7 @@ class yolov5_ros(Node):
 
         detection_parameters = sl.ObjectDetectionParameters()
         detection_parameters.detection_model = sl.DETECTION_MODEL.CUSTOM_BOX_OBJECTS
-        detection_parameters.enable_tracking = False
+        detection_parameters.enable_tracking = True
         detection_parameters.enable_mask_output = True # Outputs 2D masks over detected objects
         err = self.zed.enable_object_detection(detection_parameters)
         if err != sl.ERROR_CODE.SUCCESS :
@@ -680,6 +680,7 @@ class yolov5_ros(Node):
             self.image_pub.publish(ros_image)
             class_id, class_list, confidence_list, x_min_list, y_min_list, x_max_list, y_max_list, bounding_box_2d = self.yolov5.image_callback(ros_image)
 
+            classIds = []
             objects_in = []
             # The "detections" variable contains your custom 2D detections
             for i in range(len(class_id)):
@@ -688,6 +689,7 @@ class yolov5_ros(Node):
                 tmp.unique_object_id = sl.generate_unique_id()
                 tmp.probability = confidence_list[i]
                 tmp.label = class_id[i]
+                classIds.append(class_id[i])
                 tmp.bounding_box_2d = bounding_box_2d[i]
                 # tmp.bounding_box_2d = [[x_min_list[i],[x_max_list[i]]],[y_min_list[i], y_max_list[i]]]
                 tmp.is_grounded = False # objects are moving on the floor plane and tracked in 2D only
@@ -699,30 +701,35 @@ class yolov5_ros(Node):
 
             detections = Detection3DArray()
             detections.detections = []
-
+            
+            counter = 0 #use for label lookup
             for obj in objects.object_list:
-                object_id = obj.id # Get the object id
-                object_position = obj.position # Get the object position
-                object_tracking_state = obj.tracking_state # Get the tracking state of the object
-                # if object_tracking_state == sl.OBJECT_TRACK_STATE.OK :
-                #     print("Object {0} is tracked\n".format(object_id))
-                detection = Detection3D()
-                detection.results = []
-                object_hypothesis = ObjectHypothesisWithPose()
-                object_hypothesis.hypothesis.class_id = 'test'
-                position = Point()
-                object_hypothesis.pose.pose.position = position
-                # print(obj.position)
-                LOGGER.info(obj.position)
-                # hypothesis = ObjectHypothesis()
-                # hyp.hypothesis.class_id = ids[idx]
-                # hyp.hypothesis.score = float(confidences[idx])
-                # hypothesis.id = 1
-                # object_hypothesis.hypothesis
-                # hypothesis.class_id = 1
-                # hypothesis.id = 'this is the dope int id'
-                detection.results.append(object_hypothesis)
-                detections.detections.append(detection)
+                if (counter < len(classIds)):
+                    object_id = obj.id # Get the object id
+                    object_position = obj.position # Get the object position
+                    object_tracking_state = obj.tracking_state # Get the tracking state of the object
+                    # if object_tracking_state == sl.OBJECT_TRACK_STATE.OK :
+                    #     print("Object {0} is tracked\n".format(object_id))
+                    detection = Detection3D()
+                    detection.results = []
+                    object_hypothesis = ObjectHypothesisWithPose()
+                    object_hypothesis.hypothesis.class_id = 'test'
+                    position = Point()
+                    object_hypothesis.pose.pose.position = position
+                    # print(obj.position)
+                    LOGGER.info(obj.position)
+                    LOGGER.info(classIds[counter])
+                    # hypothesis = ObjectHypothesis()
+                    # hyp.hypothesis.class_id = ids[idx]
+                    # hyp.hypothesis.score = float(confidences[idx])
+                    # hypothesis.id = 1
+                    # object_hypothesis.hypothesis
+                    # hypothesis.class_id = 1
+                    # hypothesis.id = 'this is the dope int id'
+                    detection.results.append(object_hypothesis)
+                    detections.detections.append(detection)
+
+                    counter += 1
 
 
 
