@@ -2,7 +2,7 @@ from setuptools import setup
 import os
 from glob import glob
 
-package_name = 'riptide_mapping2'
+package_name = 'riptide_vision2'
 
 setup(
     name=package_name,
@@ -17,18 +17,14 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='coalman321',
-    maintainer_email='cjtucker321@gmail.com',
+    maintainer='mitchsayre',
+    maintainer_email='sayremitch@gmail.com',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'mapping = riptide_mapping2.mapping:main',
-            'calibrate = riptide_mapping2.calibrate:main',
+            'vision = riptide_vision2.vision:ros_main'
         ],
-    },
-    py_modules=[
-        'riptide_mapping2.Estimate'
-    ]
+    }
 )
