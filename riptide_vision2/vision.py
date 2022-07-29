@@ -48,6 +48,19 @@ def grouper(iterable, n, fillvalue=None):
 
 bridge = CvBridge()
 
+object_ids = {
+    0 : "BinBarrel",
+    1 : "BinPhone", 
+    2 : "TommyGun", 
+    3 : "gman", 
+    4 : "axe", 
+    5 : "torpedoGman", 
+    6 : "badge",
+    7 : "torpedoBootlegger",
+    8 : "bootlegger",
+    9 : "cash"
+}
+
 def xywh2abcd(xywh, im_shape):
     output = np.zeros((4, 2))
 
@@ -722,6 +735,7 @@ class yolov5_ros(Node):
                     # print(obj.position)
                     LOGGER.info(obj.position)
                     LOGGER.info(classIds[counter])
+                    detection.id = object_ids[classIds[counter]]
 
                     # draw cv rect
                     rect = boudningRects[counter]
