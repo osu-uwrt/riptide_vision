@@ -735,7 +735,7 @@ class yolov5_ros(Node):
                     # print(obj.position)
                     LOGGER.info(obj.position)
                     LOGGER.info(classIds[counter])
-                    detection.id = object_ids[classIds[counter]]
+                    detection.hypothese.class_id = object_ids[classIds[counter]]
 
                     # draw cv rect
                     rect = boudningRects[counter]
@@ -748,6 +748,8 @@ class yolov5_ros(Node):
                     ros_image = self.bridge.cv2_to_imgmsg(image, "bgr8")
                     self.pub_detection.publish(ros_image)
 
+                    #threeBoudningBox = obj.bounding_box
+
                     # hypothesis =           ObjectHypothesis()
                     # hyp.hypothesis.class_id = ids[idx]
                     # hyp.hypothesis.score = float(confidences[idx])
@@ -757,6 +759,7 @@ class yolov5_ros(Node):
                     # hypothesis.id = 'this is the dope int id'
                     detection.results.append(object_hypothesis)
                     detections.detections.append(detection)
+                    
 
 
                     counter += 1
