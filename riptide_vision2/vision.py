@@ -250,6 +250,7 @@ class yolov5_ros(Node):
 
         self.pub_bbox = self.create_publisher(BoundingBoxes, 'yolov5/bounding_boxes', 10)
         self.pub_image = self.create_publisher(Image, 'yolov5/image_raw', 10)
+        self.pub_detection = self.create_publisher(Image, 'yolov5/image_detection', 10)
         self.pub_det3d = self.create_publisher(Detection3DArray, 'dope/detected_objects', 10)
         # self.sub_image = self.create_subscription(Image, '/tempest/stereo/left_raw/image_raw_color', self.image_callback,1)
         # self.right_sub_image = self.create_subscription(Image, '/tempest/stereo/right_raw/image_raw_color', self.empty_callback,1)
@@ -681,6 +682,7 @@ class yolov5_ros(Node):
             class_id, class_list, confidence_list, x_min_list, y_min_list, x_max_list, y_max_list, bounding_box_2d = self.yolov5.image_callback(ros_image)
 
             classIds = []
+            boudningRects = []
             objects_in = []
             # The "detections" variable contains your custom 2D detections
             for i in range(len(class_id)):
@@ -691,6 +693,7 @@ class yolov5_ros(Node):
                 tmp.label = class_id[i]
                 classIds.append(class_id[i])
                 tmp.bounding_box_2d = bounding_box_2d[i]
+                boudningRects.append(bounding_box_2d[i])
                 # tmp.bounding_box_2d = [[x_min_list[i],[x_max_list[i]]],[y_min_list[i], y_max_list[i]]]
                 tmp.is_grounded = False # objects are moving on the floor plane and tracked in 2D only
                 objects_in.append(tmp)
@@ -719,7 +722,19 @@ class yolov5_ros(Node):
                     # print(obj.position)
                     LOGGER.info(obj.position)
                     LOGGER.info(classIds[counter])
-                    # hypothesis = ObjectHypothesis()
+
+                    # draw cv rect
+                    rect = boudningRects[counter]
+                    x = rect[3][0]
+                    y = rect[3][1]
+                    w = rect[1][0] - x
+                    h = rect[1][1] - y
+                    cv2.rectangle(image, (x, y), (x+w, y+h),(0, 250, 0), 2)
+
+                    ros_image = self.bridge.cv2_to_imgmsg(image, "bgr8")
+                    self.pub_detection.publish(ros_image)
+
+                    # hypothesis =           ObjectHypothesis()
                     # hyp.hypothesis.class_id = ids[idx]
                     # hyp.hypothesis.score = float(confidences[idx])
                     # hypothesis.id = 1
@@ -729,9 +744,10 @@ class yolov5_ros(Node):
                     detection.results.append(object_hypothesis)
                     detections.detections.append(detection)
 
+
                     counter += 1
 
-
+                LOGGER.warn("Threw out {} detections.", len(objects.object_list) - counter)
 
             
             self.pub_det3d.publish(detections)
