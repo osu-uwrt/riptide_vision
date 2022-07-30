@@ -15,7 +15,14 @@ def generate_launch_description():
                        {"data":os.path.join(riptide_vision_share_dir,"config/pool.yaml")}
                    ],
     )
+    static_transform = launch_ros.actions.Node(
+            name="odom_to_world_broadcaster",
+            package="tf2_ros",
+            executable="static_transform_publisher",
+            arguments=["-0.242", "0.283", "-0.066", "0", "0", "0", "tempest/base_link", "tempest/stereo/left_optical"]
+    )
 
     return launch.LaunchDescription([
         riptide_vision,
+        static_transform
     ])
