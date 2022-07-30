@@ -343,7 +343,9 @@ class yolov5_ros(Node):
         self.rolledIds = self.data.rolledCaseIds
         if len(self.object_ids) == 0:
             LOGGER.fatal("Id lookup did not import from yaml!")
-            
+            rclpy.shutdown()
+
+
 
         self.yolov5 = yolov5_demo(self.weights,
                                 self.data,
