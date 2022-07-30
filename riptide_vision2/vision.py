@@ -6,7 +6,6 @@ import os
 import sys
 import threading
 from pathlib import Path
-from tkinter import image_names
 
 import cv2
 import numpy as np
@@ -48,19 +47,6 @@ def grouper(iterable, n, fillvalue=None):
         return zip_longest(fillvalue=fillvalue, *args)
 
 bridge = CvBridge()
-
-object_ids = {
-    0 : "BinBarrel",
-    1 : "BinPhone", 
-    2 : "TommyGun", 
-    3 : "gman", 
-    4 : "axe", 
-    5 : "torpedoGman", 
-    6 : "badge",
-    7 : "torpedoBootlegger",
-    8 : "bootlegger",
-    9 : "cash"
-}
 
 def xywh2abcd(xywh, im_shape):
     output = np.zeros((4, 2))
@@ -353,6 +339,7 @@ class yolov5_ros(Node):
         self.obj_runtime_param = sl.ObjectDetectionRuntimeParameters()
         self.obj_runtime_param.detection_confidence_threshold = 20
 
+        self.object_ids = self.data.names
 
         self.yolov5 = yolov5_demo(self.weights,
                                 self.data,
@@ -739,7 +726,7 @@ class yolov5_ros(Node):
                     # print(obj.position)
                     LOGGER.info(obj.position)
                     LOGGER.info(classIds[counter])
-                    detection.hypothese.class_id = object_ids[classIds[counter]]
+                    detection.hypothese.class_id = self.object_ids[classIds[counter]]
 
                     # draw cv rect
                     rect = boudningRects[counter]
@@ -753,24 +740,57 @@ class yolov5_ros(Node):
                     self.pub_detection.publish(ros_image)
 
                     threeBoundingBox = obj.bounding_box
-                    centerFrontPlane = {(threeBoundingBox[0][0] + threeBoundingBox[7][0]) / 2, (threeBoundingBox[0][1] + threeBoundingBox[7][1]) / 2, (threeBoundingBox[0][2] + threeBoundingBox[7][2]) / 2}
-                    centerBackPlane = {(threeBoundingBox[0][0] + threeBoundingBox[7][0]) / 2, (threeBoundingBox[0][1] + threeBoundingBox[7][1]) / 2, (threeBoundingBox[0][2] + threeBoundingBox[7][2]) / 2}
-                    vector = {centerFrontPlane[0] - centerBackPlane[0], centerFrontPlane[1] - centerBackPlane[1], centerFrontPlane[2] - centerBackPlane[2]}
-                    #vector = {x, y, z}
+            
+                    #Update when yaml is changed
+                    binsAndTableIds = {0, 1, 4, 9}
 
-                    # we do not care about the y direction - it can be assumed flat
-                    #TODO Write Bins/Table Exceptions
-                    
-                    imageRelativeYaw = 0
-                    if not vector[2] == 0:
-                        #stop a nan error
-                        imageRelativeYaw = math.atan(vector[0] / vector[2])
+                    #determine the orientation of the object
+                    object_orientation = Quaternion()
+                    if classIds[counter] in binsAndTableIds:
+                        # if robot is rolled forward
 
-                    # we dont care about x,z and w
-                    object_hypothesis.pose.pose.orientation.x = 0
-                    object_hypothesis.pose.pose.orientation.y = 0 
-                    object_hypothesis.pose.pose.orientation.z = imageRelativeYaw
-                    object_hypothesis.pose.pose.orientation.w = 0
+                        #from the back plane to the front plane -- accounting for roll forward
+                        centerFrontPlane = {(threeBoundingBox[4][0] + threeBoundingBox[6][0]) / 2, (threeBoundingBox[4][1] + threeBoundingBox[6][1]) / 2, (threeBoundingBox[4][2] + threeBoundingBox[6][2]) / 2}
+                        centerBackPlane = {(threeBoundingBox[0][0] + threeBoundingBox[2][0]) / 2, (threeBoundingBox[0][1] + threeBoundingBox[2][1]) / 2, (threeBoundingBox[0][2] + threeBoundingBox[2][2]) / 2}
+                        vector = {centerFrontPlane[0] - centerBackPlane[0], centerFrontPlane[1] - centerBackPlane[1], centerFrontPlane[2] - centerBackPlane[2]}
+                        #vector = {x, y, z}
+
+                        imageYaw = 0
+                        if not vector[1] == 0:
+                            #stops a nan error
+
+                            #this is the way the image is facing - not the orientation of the camer
+                            imageYaw = math.atan(vector[0] / vector[1])
+
+                        # we dont care about x,z and w
+                        object_orientation.x = 0
+                        object_orientation.y = 0 
+                        object_orientation.z = imageYaw
+                        object_orientation.w = 0
+
+                    else:
+                        #if robot not rolled forward
+
+                        #from the back plane to the front plane
+                        centerFrontPlane = {(threeBoundingBox[0][0] + threeBoundingBox[7][0]) / 2, (threeBoundingBox[0][1] + threeBoundingBox[7][1]) / 2, (threeBoundingBox[0][2] + threeBoundingBox[7][2]) / 2}
+                        centerBackPlane = {(threeBoundingBox[1][0] + threeBoundingBox[6][0]) / 2, (threeBoundingBox[1][1] + threeBoundingBox[6][1]) / 2, (threeBoundingBox[1][2] + threeBoundingBox[6][2]) / 2}
+                        vector = {centerFrontPlane[0] - centerBackPlane[0], centerFrontPlane[1] - centerBackPlane[1], centerFrontPlane[2] - centerBackPlane[2]}
+                        #vector = {x, y, z}
+
+                        imageYaw = 0
+                        if not vector[2] == 0:
+                            #stops a nan error
+
+                            #this is the way the image is facing - not the orientation of the camer
+                            imageYaw = math.atan(vector[0] / vector[2])
+
+                        # we dont care about x,z and w
+                        object_orientation.x = 0
+                        object_orientation.y = 0 
+                        object_orientation.z = imageYaw
+                        object_orientation.w = 0
+
+                    object_hypothesis.pose.pose.orientation = object_orientation
                     
                     #returns score between 0 and 100 -> score wants between 0 and 1
                     object_hypothesis.score = obj.confidence / 100
@@ -788,8 +808,6 @@ class yolov5_ros(Node):
                     detection.results.append(object_hypothesis)
                     detections.detections.append(detection)
                     
-
-
                     counter += 1
 
                 LOGGER.warn("Threw out {} detections.", len(objects.object_list) - counter)
