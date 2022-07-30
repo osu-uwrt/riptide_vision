@@ -1,4 +1,5 @@
 import argparse
+import yaml
 from distutils.log import Log, debug
 from logging import Logger
 import math
@@ -125,9 +126,7 @@ class yolov5_demo():
 
         source = 0
         # Dataloader
-        webcam = False
-        if webcam:
-            view_img = check_imshow()
+
         cudnn.benchmark = True
         bs = 1
         self.vid_path, self.vid_writer = [None] * bs, [None] * bs
@@ -339,12 +338,20 @@ class yolov5_ros(Node):
         self.obj_runtime_param = sl.ObjectDetectionRuntimeParameters()
         self.obj_runtime_param.detection_confidence_threshold = 20
 
-        self.object_ids = self.data.names
-        self.rolledIds = self.data.rolledCaseIds
-        if len(self.object_ids) == 0:
-            LOGGER.fatal("Id lookup did not import from yaml!")
-            rclpy.shutdown()
-
+        # if the names are changed in pool.yaml, changes the IDs and lookup below
+        self.rolledCaseIds = {0, 1, 4, 9}
+        self.object_ids = {
+            0 : "BinBarrel",
+            1 : "BinPhone", 
+            2 : "TommyGun", 
+            3 : "gman", 
+            4 : "axe", 
+            5 : "torpedoGman", 
+            6 : "badge",
+            7 : "torpedoBootlegger",
+            8 : "bootlegger",
+            9 : "cash"
+        }
 
 
         self.yolov5 = yolov5_demo(self.weights,
@@ -732,7 +739,7 @@ class yolov5_ros(Node):
                     # print(obj.position)
                     LOGGER.info(obj.position)
                     LOGGER.info(classIds[counter])
-                    detection.hypothese.class_id = self.object_ids[classIds[counter]]
+                    object_hypothesis.hypothesis.class_id = self.object_ids[classIds[counter]]
 
                     # draw cv rect
                     rect = boudningRects[counter]
@@ -740,80 +747,87 @@ class yolov5_ros(Node):
                     y = rect[3][1]
                     w = rect[1][0] - x
                     h = rect[1][1] - y
-                    cv2.rectangle(image, (x, y), (x+w, y+h),(0, 250, 0), 2)
+                    #cv2.rectangle(image, (x, y), (x+w, y+h),(0, 250, 0), 2)
 
                     ros_image = self.bridge.cv2_to_imgmsg(image, "bgr8")
                     self.pub_detection.publish(ros_image)
 
+                    #cannot determine orentation without 3Dbox
                     threeBoundingBox = obj.bounding_box
-            
-                    #determine the orientation of the object
-                    object_orientation = Quaternion()
-                    if classIds[counter] in self.rolledIds:
-                        # if robot is rolled forward
-
-                        #from the back plane to the front plane -- accounting for roll forward
-                        centerFrontPlane = {(threeBoundingBox[4][0] + threeBoundingBox[6][0]) / 2, (threeBoundingBox[4][1] + threeBoundingBox[6][1]) / 2, (threeBoundingBox[4][2] + threeBoundingBox[6][2]) / 2}
-                        centerBackPlane = {(threeBoundingBox[0][0] + threeBoundingBox[2][0]) / 2, (threeBoundingBox[0][1] + threeBoundingBox[2][1]) / 2, (threeBoundingBox[0][2] + threeBoundingBox[2][2]) / 2}
-                        vector = {centerFrontPlane[0] - centerBackPlane[0], centerFrontPlane[1] - centerBackPlane[1], centerFrontPlane[2] - centerBackPlane[2]}
-                        #vector = {x, y, z}
-
-                        imageYaw = 0
-                        if not vector[1] == 0:
-                            #stops a nan error
-
-                            #this is the way the image is facing - not the orientation of the camer
-                            imageYaw = math.atan(vector[0] / vector[1])
-
-                        # we dont care about x,z and w
-                        object_orientation.x = 0
-                        object_orientation.y = 0 
-                        object_orientation.z = imageYaw
-                        object_orientation.w = 0
-
-                    else:
-                        #if robot not rolled forward
-
-                        #from the back plane to the front plane
-                        centerFrontPlane = {(threeBoundingBox[0][0] + threeBoundingBox[7][0]) / 2, (threeBoundingBox[0][1] + threeBoundingBox[7][1]) / 2, (threeBoundingBox[0][2] + threeBoundingBox[7][2]) / 2}
-                        centerBackPlane = {(threeBoundingBox[1][0] + threeBoundingBox[6][0]) / 2, (threeBoundingBox[1][1] + threeBoundingBox[6][1]) / 2, (threeBoundingBox[1][2] + threeBoundingBox[6][2]) / 2}
-                        vector = {centerFrontPlane[0] - centerBackPlane[0], centerFrontPlane[1] - centerBackPlane[1], centerFrontPlane[2] - centerBackPlane[2]}
-                        #vector = {x, y, z}
-
-                        imageYaw = 0
-                        if not vector[2] == 0:
-                            #stops a nan error
-
-                            #this is the way the image is facing - not the orientation of the camer
-                            imageYaw = math.atan(vector[0] / vector[2])
-
-                        # we dont care about x,z and w
-                        object_orientation.x = 0
-                        object_orientation.y = 0 
-                        object_orientation.z = imageYaw
-                        object_orientation.w = 0
-
-                    object_hypothesis.pose.pose.orientation = object_orientation
                     
-                    #returns score between 0 and 100 -> score wants between 0 and 1
-                    object_hypothesis.score = obj.confidence / 100
+                    if len(threeBoundingBox) == 8:
+                        LOGGER.info(f"Bound: ${threeBoundingBox}")
+                
+                        #determine the orientation of the object
+                        object_orientation = Quaternion()
+                        if classIds[counter] in self.rolledCaseIds:
+                            # if robot is rolled forward
+
+                            #from the back plane to the front plane -- accounting for roll forward
+                            centerFrontPlane = [(threeBoundingBox[4][0] + threeBoundingBox[6][0]) / 2, (threeBoundingBox[4][1] + threeBoundingBox[6][1]) / 2, -(threeBoundingBox[4][2] + threeBoundingBox[6][2]) / 2]
+                            centerBackPlane = [(threeBoundingBox[0][0] + threeBoundingBox[2][0]) / 2, (threeBoundingBox[0][1] + threeBoundingBox[2][1]) / 2, -(threeBoundingBox[0][2] + threeBoundingBox[2][2]) / 2]
+                            arrowVector = [centerFrontPlane[0] - centerBackPlane[0], centerFrontPlane[1] - centerBackPlane[1], centerFrontPlane[2] - centerBackPlane[2]]
+                            #vector = {x, y, z}
+
+                            imageYaw = 0
+                            if not arrowVector[1] == 0:
+                                #stops a nan error
+
+                                #this is the way the image is facing - not the orientation of the camer
+                                imageYaw = math.atan(arrowVector[0] / arrowVector[1])
+
+                            # we dont care about x,z and w
+                            object_orientation.x = 0.0
+                            object_orientation.y = 0.0
+                            object_orientation.z = imageYaw
+                            object_orientation.w = 0.0
+
+                        else:
+                            #if robot not rolled forward
+
+                            #from the back plane to the front plane
+                            centerFrontPlane = [(threeBoundingBox[0][0] + threeBoundingBox[7][0]) / 2, (threeBoundingBox[0][1] + threeBoundingBox[7][1]) / 2, -(threeBoundingBox[0][2] + threeBoundingBox[7][2]) / 2]
+                            centerBackPlane = [(threeBoundingBox[1][0] + threeBoundingBox[6][0]) / 2, (threeBoundingBox[1][1] + threeBoundingBox[6][1]) / 2, -(threeBoundingBox[1][2] + threeBoundingBox[6][2]) / 2]
+                            arrowVector = [centerFrontPlane[0] - centerBackPlane[0], centerFrontPlane[1] - centerBackPlane[1], centerFrontPlane[2] - centerBackPlane[2]]
+                            #vector = {x, y, z}
+
+                            imageYaw = 0
+                            if not arrowVector[2] == 0:
+                                #stops a nan error
+                                
+                                #this is the way the image is facing - not the orientation of the camer
+                                imageYaw = math.atan(arrowVector[0] / arrowVector[2])
+
+                            # we dont care about x,z and w
+                            object_orientation.x = 0.0
+                            object_orientation.y = 0.0
+                            object_orientation.z = imageYaw
+                            object_orientation.w = 0.0
+
+                        LOGGER.info(f"Yaw: {imageYaw}")
+
+                        object_hypothesis.pose.pose.orientation = object_orientation
+                        
+                        #returns score between 0 and 100 -> score wants between 0 and 1
+                        object_hypothesis.hypothesis.score = obj.confidence / 100
+                        
+                        # hypothesis =           ObjectHypothesis()imageRelativeYaw
+                        # hyp.hypothesis.class_id = ids[idx]
+                        # hyp.hypothesis.score = float(confidences[idx])
+                        # hypothesis.id = 1
+                        # object_hypothesis.hypothesis
+                        # hypothesis.class_id = 1
+                        # hypothesis.id = 'this is the dope int id'
+
+
+                        #Mapping will reject in two objects in one place
+                        detection.results.append(object_hypothesis)
+                        detections.detections.append(detection)
+                        
+                        counter += 1
                     
-                    # hypothesis =           ObjectHypothesis()imageRelativeYaw
-                    # hyp.hypothesis.class_id = ids[idx]
-                    # hyp.hypothesis.score = float(confidences[idx])
-                    # hypothesis.id = 1
-                    # object_hypothesis.hypothesis
-                    # hypothesis.class_id = 1
-                    # hypothesis.id = 'this is the dope int id'
 
-
-                    #Mapping will reject in two objects in one place
-                    detection.results.append(object_hypothesis)
-                    detections.detections.append(detection)
-                    
-                    counter += 1
-
-                LOGGER.warn("Threw out {} detections.", len(objects.object_list) - counter)
+                LOGGER.warn(f"Threw out {len(objects.object_list) - counter} detections.")
 
             
             self.pub_det3d.publish(detections)
