@@ -6,6 +6,7 @@ import os
 import sys
 import threading
 from pathlib import Path
+from tkinter import image_names
 
 import cv2
 import numpy as np
@@ -694,6 +695,9 @@ class yolov5_ros(Node):
             self.image_pub.publish(ros_image)
             class_id, class_list, confidence_list, x_min_list, y_min_list, x_max_list, y_max_list, bounding_box_2d = self.yolov5.image_callback(ros_image)
 
+            if not (len(class_id) == len(confidence_list)):
+                LOGGER.warn(f"The number of ids returned, {len(class_id)}, is not equal to the number of detections, {len(confidence_list)}! ")
+
             classIds = []
             boudningRects = []
             objects_in = []
@@ -748,15 +752,39 @@ class yolov5_ros(Node):
                     ros_image = self.bridge.cv2_to_imgmsg(image, "bgr8")
                     self.pub_detection.publish(ros_image)
 
-                    #threeBoudningBox = obj.bounding_box
+                    threeBoundingBox = obj.bounding_box
+                    centerFrontPlane = {(threeBoundingBox[0][0] + threeBoundingBox[7][0]) / 2, (threeBoundingBox[0][1] + threeBoundingBox[7][1]) / 2, (threeBoundingBox[0][2] + threeBoundingBox[7][2]) / 2}
+                    centerBackPlane = {(threeBoundingBox[0][0] + threeBoundingBox[7][0]) / 2, (threeBoundingBox[0][1] + threeBoundingBox[7][1]) / 2, (threeBoundingBox[0][2] + threeBoundingBox[7][2]) / 2}
+                    vector = {centerFrontPlane[0] - centerBackPlane[0], centerFrontPlane[1] - centerBackPlane[1], centerFrontPlane[2] - centerBackPlane[2]}
+                    #vector = {x, y, z}
 
-                    # hypothesis =           ObjectHypothesis()
+                    # we do not care about the y direction - it can be assumed flat
+                    #TODO Write Bins/Table Exceptions
+                    
+                    imageRelativeYaw = 0
+                    if not vector[2] == 0:
+                        #stop a nan error
+                        imageRelativeYaw = math.atan(vector[0] / vector[2])
+
+                    # we dont care about x,z and w
+                    object_hypothesis.pose.pose.orientation.x = 0
+                    object_hypothesis.pose.pose.orientation.y = 0 
+                    object_hypothesis.pose.pose.orientation.z = imageRelativeYaw
+                    object_hypothesis.pose.pose.orientation.w = 0
+                    
+                    #returns score between 0 and 100 -> score wants between 0 and 1
+                    object_hypothesis.score = obj.confidence / 100
+                    
+                    # hypothesis =           ObjectHypothesis()imageRelativeYaw
                     # hyp.hypothesis.class_id = ids[idx]
                     # hyp.hypothesis.score = float(confidences[idx])
                     # hypothesis.id = 1
                     # object_hypothesis.hypothesis
                     # hypothesis.class_id = 1
                     # hypothesis.id = 'this is the dope int id'
+
+
+                    #Mapping will reject in two objects in one place
                     detection.results.append(object_hypothesis)
                     detections.detections.append(detection)
                     
