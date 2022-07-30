@@ -16,5 +16,6 @@ test: ../autosplit_test.txt # test images (optional)
 # Classes
 nc: 10  # number of classes
 
+#if you change the names, change the case ids too!
 names: ['BinBarrel', 'BinPhone', 'TommyGun', 'gman', 'axe', 'torpedoGman', 'badge', 'torpedoBootlegger', 'bootlegger', 'cash']  # class names
-#if the names are changed -> update table and bins execptions to corrospond!!!!
+rolledCaseIds: [0, 1, 4, 9]

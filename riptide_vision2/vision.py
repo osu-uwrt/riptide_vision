@@ -340,6 +340,10 @@ class yolov5_ros(Node):
         self.obj_runtime_param.detection_confidence_threshold = 20
 
         self.object_ids = self.data.names
+        self.rolledIds = self.data.rolledCaseIds
+        if len(self.object_ids) == 0:
+            LOGGER.fatal("Id lookup did not import from yaml!")
+            
 
         self.yolov5 = yolov5_demo(self.weights,
                                 self.data,
@@ -741,12 +745,9 @@ class yolov5_ros(Node):
 
                     threeBoundingBox = obj.bounding_box
             
-                    #Update when yaml is changed
-                    binsAndTableIds = {0, 1, 4, 9}
-
                     #determine the orientation of the object
                     object_orientation = Quaternion()
-                    if classIds[counter] in binsAndTableIds:
+                    if classIds[counter] in self.rolledIds:
                         # if robot is rolled forward
 
                         #from the back plane to the front plane -- accounting for roll forward
