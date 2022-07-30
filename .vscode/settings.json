@@ -1,0 +1,24 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/uwrt/osu-uwrt/riptide_software/install/riptide_teleop2/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/riptide_software/install/riptide_rqt_plugins2/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/riptide_software/install/riptide_hardware2/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/riptide_software/install/riptide_controllers2/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/riptide_software/install/riptide_msgs2/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/riptide_software/install/riptide_mapping2/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/riptide_software/install/riptide_localization2/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/riptide_software/install/riptide_ignition2/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/riptide_software/install/riptide_bringup2/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/dependencies/install/yolov5_ros/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/dependencies/install/ros_tcp_endpoint/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/dependencies/install/nortek_dvl/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/dependencies/install/mynteye_wrapper_d/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/dependencies/install/microstrain_inertial_rqt/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/dependencies/install/microstrain_inertial_msgs/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/dependencies/install/micro_ros_msgs/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/dependencies/install/drive_base_msgs/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/dependencies/install/camera_calibration/lib/python3.8/site-packages",
+        "/home/uwrt/osu-uwrt/dependencies/install/bboxes_ex_msgs/lib/python3.8/site-packages",
+        "/opt/ros/galactic/lib/python3.8/site-packages"
+    ]
+}

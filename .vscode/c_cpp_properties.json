@@ -1,0 +1,28 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/uwrt/osu-uwrt/riptide_software/install/riptide_msgs2/include/**",
+        "/home/uwrt/osu-uwrt/dependencies/install/nortek_dvl/include/**",
+        "/home/uwrt/osu-uwrt/dependencies/install/mynteye_wrapper_d/include/**",
+        "/home/uwrt/osu-uwrt/dependencies/install/microstrain_inertial_msgs/include/**",
+        "/home/uwrt/osu-uwrt/dependencies/install/micro_ros_msgs/include/**",
+        "/home/uwrt/osu-uwrt/dependencies/install/drive_base_msgs/include/**",
+        "/home/uwrt/osu-uwrt/dependencies/install/bboxes_ex_msgs/include/**",
+        "/opt/ros/galactic/include/**",
+        "/home/uwrt/osu-uwrt/riptide_software/src/riptide_autonomy/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

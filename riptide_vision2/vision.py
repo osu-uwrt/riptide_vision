@@ -687,10 +687,10 @@ class yolov5_ros(Node):
         while graberr == sl.ERROR_CODE.SUCCESS:
             
             self.zed.retrieve_image(image_left_tmp, sl.VIEW.LEFT)
-            #LOGGER.info("FUCK")
             image = image_left_tmp.get_data()
             image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
             ros_image = self.bridge.cv2_to_imgmsg(image,'bgr8')
+            ros_image.header.frame_id = "/tempest/stereo/left_optical"
             #LOGGER.info("Got data")
             self.image_pub.publish(ros_image)
             class_id, class_list, confidence_list, x_min_list, y_min_list, x_max_list, y_max_list, bounding_box_2d = self.yolov5.image_callback(ros_image)
@@ -735,10 +735,16 @@ class yolov5_ros(Node):
                     object_hypothesis = ObjectHypothesisWithPose()
                     object_hypothesis.hypothesis.class_id = 'test'
                     position = Point()
+                    
+                    #flip coordinates
+                    position.x = -obj.position[0]
+                    position.y = -obj.position[1]
+                    position.z = -obj.position[2]
+                    
                     object_hypothesis.pose.pose.position = position
                     # print(obj.position)
-                    LOGGER.info(obj.position)
-                    LOGGER.info(classIds[counter])
+                    LOGGER.info(f"Adjusted Position {obj.position}")
+                    LOGGER.info(f"Class Ids{self.object_ids[classIds[counter]]}")
                     object_hypothesis.hypothesis.class_id = self.object_ids[classIds[counter]]
 
                     # draw cv rect
@@ -756,7 +762,16 @@ class yolov5_ros(Node):
                     threeBoundingBox = obj.bounding_box
                     
                     if len(threeBoundingBox) == 8:
-                        LOGGER.info(f"Bound: ${threeBoundingBox}")
+                        LOGGER.info(f"Bound: {threeBoundingBox}")
+                        
+                        flippedThreeBoundingBox = []
+                        for point in threeBoundingBox:
+                            flippedPoint = []
+                            
+                            for coordinate in point:
+                                flippedPoint.append(-coordinate)
+                                
+                            flippedThreeBoundingBox.append(flippedPoint)
                 
                         #determine the orientation of the object
                         object_orientation = Quaternion()
@@ -764,8 +779,8 @@ class yolov5_ros(Node):
                             # if robot is rolled forward
 
                             #from the back plane to the front plane -- accounting for roll forward
-                            centerFrontPlane = [(threeBoundingBox[4][0] + threeBoundingBox[6][0]) / 2, (threeBoundingBox[4][1] + threeBoundingBox[6][1]) / 2, -(threeBoundingBox[4][2] + threeBoundingBox[6][2]) / 2]
-                            centerBackPlane = [(threeBoundingBox[0][0] + threeBoundingBox[2][0]) / 2, (threeBoundingBox[0][1] + threeBoundingBox[2][1]) / 2, -(threeBoundingBox[0][2] + threeBoundingBox[2][2]) / 2]
+                            centerFrontPlane = [(flippedThreeBoundingBox[4][0] + flippedThreeBoundingBox[6][0]) / 2, (flippedThreeBoundingBox[4][1] + flippedThreeBoundingBox[6][1]) / 2, -(flippedThreeBoundingBox[4][2] + flippedThreeBoundingBox[6][2]) / 2]
+                            centerBackPlane = [(flippedThreeBoundingBox[0][0] + flippedThreeBoundingBox[2][0]) / 2, (flippedThreeBoundingBox[0][1] + flippedThreeBoundingBox[2][1]) / 2, -(flippedThreeBoundingBox[0][2] + flippedThreeBoundingBox[2][2]) / 2]
                             arrowVector = [centerFrontPlane[0] - centerBackPlane[0], centerFrontPlane[1] - centerBackPlane[1], centerFrontPlane[2] - centerBackPlane[2]]
                             #vector = {x, y, z}
 
@@ -786,8 +801,8 @@ class yolov5_ros(Node):
                             #if robot not rolled forward
 
                             #from the back plane to the front plane
-                            centerFrontPlane = [(threeBoundingBox[0][0] + threeBoundingBox[7][0]) / 2, (threeBoundingBox[0][1] + threeBoundingBox[7][1]) / 2, -(threeBoundingBox[0][2] + threeBoundingBox[7][2]) / 2]
-                            centerBackPlane = [(threeBoundingBox[1][0] + threeBoundingBox[6][0]) / 2, (threeBoundingBox[1][1] + threeBoundingBox[6][1]) / 2, -(threeBoundingBox[1][2] + threeBoundingBox[6][2]) / 2]
+                            centerFrontPlane = [(flippedThreeBoundingBox[0][0] + flippedThreeBoundingBox[7][0]) / 2, (flippedThreeBoundingBox[0][1] + flippedThreeBoundingBox[7][1]) / 2, -(flippedThreeBoundingBox[0][2] + flippedThreeBoundingBox[7][2]) / 2]
+                            centerBackPlane = [(flippedThreeBoundingBox[1][0] + flippedThreeBoundingBox[6][0]) / 2, (flippedThreeBoundingBox[1][1] + flippedThreeBoundingBox[6][1]) / 2, -(flippedThreeBoundingBox[1][2] + flippedThreeBoundingBox[6][2]) / 2]
                             arrowVector = [centerFrontPlane[0] - centerBackPlane[0], centerFrontPlane[1] - centerBackPlane[1], centerFrontPlane[2] - centerBackPlane[2]]
                             #vector = {x, y, z}
 
