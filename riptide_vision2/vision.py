@@ -1,4 +1,6 @@
 import argparse
+from sqlite3 import Time
+from time import time
 import yaml
 from distutils.log import Log, debug
 from logging import Logger
@@ -250,7 +252,7 @@ class yolov5_ros(Node):
         self.pub_bbox = self.create_publisher(BoundingBoxes, 'yolov5/bounding_boxes', 10)
         self.pub_image = self.create_publisher(Image, 'yolov5/image_raw', 10)
         self.pub_detection = self.create_publisher(Image, 'yolov5/image_detection', 10)
-        self.pub_det3d = self.create_publisher(Detection3DArray, 'dope/detected_objects', 10)
+        self.pub_det3d = self.create_publisher(Detection3DArray, '/tempest/dope/detected_objects', 10)
         # self.sub_image = self.create_subscription(Image, '/tempest/stereo/left_raw/image_raw_color', self.image_callback,1)
         # self.right_sub_image = self.create_subscription(Image, '/tempest/stereo/right_raw/image_raw_color', self.empty_callback,1)
         #self.sub_depth = self.create_subscription(Image, '/tempest/stereo/depth/depth_registered', self.depth_callback, 1)
@@ -720,6 +722,9 @@ class yolov5_ros(Node):
             self.zed.retrieve_objects(objects, self.obj_runtime_param) # Retrieve the 3D tracked objects
 
             detections = Detection3DArray()
+            detections.header.stamp.nanosec = self.get_clock().now().seconds_nanoseconds()[1]          
+            detections.header.stamp.sec = self.get_clock().now().seconds_nanoseconds()[0]
+            
             detections.detections = []
             
             counter = 0 #use for label lookup
@@ -743,7 +748,7 @@ class yolov5_ros(Node):
                     
                     object_hypothesis.pose.pose.position = position
                     # print(obj.position)
-                    LOGGER.info(f"Adjusted Position {obj.position}")
+                    LOGGER.info(f"Adjusted Position {position}")
                     LOGGER.info(f"Class Ids{self.object_ids[classIds[counter]]}")
                     object_hypothesis.hypothesis.class_id = self.object_ids[classIds[counter]]
 
@@ -762,7 +767,6 @@ class yolov5_ros(Node):
                     threeBoundingBox = obj.bounding_box
                     
                     if len(threeBoundingBox) == 8:
-                        LOGGER.info(f"Bound: {threeBoundingBox}")
                         
                         flippedThreeBoundingBox = []
                         for point in threeBoundingBox:
@@ -772,6 +776,9 @@ class yolov5_ros(Node):
                                 flippedPoint.append(-coordinate)
                                 
                             flippedThreeBoundingBox.append(flippedPoint)
+                            
+                        LOGGER.info(f"Bound: {flippedThreeBoundingBox}")
+
                 
                         #determine the orientation of the object
                         object_orientation = Quaternion()
@@ -825,6 +832,7 @@ class yolov5_ros(Node):
                         
                         #returns score between 0 and 100 -> score wants between 0 and 1
                         object_hypothesis.hypothesis.score = obj.confidence / 100
+                        LOGGER.info(obj.confidence)
                         
                         # hypothesis =           ObjectHypothesis()imageRelativeYaw
                         # hyp.hypothesis.class_id = ids[idx]
