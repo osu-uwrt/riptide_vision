@@ -20,21 +20,9 @@ def generate_launch_description():
                        {"weights":os.path.join(riptide_vision_share_dir,"weights/last.pt")},
                        {"data":os.path.join(riptide_vision_share_dir,"config/pool.yaml")}
                    ],
-    )
-    static_transform = launch_ros.actions.Node(
-            name="odom_to_world_broadcaster",
-            package="tf2_ros",
-            executable="static_transform_publisher",
-            # arguments=["-0.242", "0.283", "-0.066", "1.57079", "3.14159", "1.5707", "tempest/origin", "tempest/stereo/left_optical"]
-            arguments=["-0.242", "0.283", "-0.066", "-1.5707", "0", "0", "tempest/origin", "tempest/stereo/left_optical"]
-    )
-
-    
+    )    
 
     return launch.LaunchDescription([
-        # riptide_vision,
-        static_transform,
-
         DeclareLaunchArgument('robot', default_value=robot_name, description="Name of the vehicle"),
 
         #push the the namespace
