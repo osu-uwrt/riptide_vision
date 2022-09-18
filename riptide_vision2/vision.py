@@ -1,9 +1,4 @@
-import argparse
-from sqlite3 import Time
 from time import time
-import yaml
-from distutils.log import Log, debug
-from logging import Logger
 import math
 import os
 import sys
@@ -29,214 +24,38 @@ from yolov5_ros.utils.datasets import letterbox
 
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image, CameraInfo
-from stereo_msgs.msg import DisparityImage
-from bboxes_ex_msgs.msg import BoundingBoxes, BoundingBox
-from vision_msgs.msg import Detection3DArray, Detection3D, ObjectHypothesisWithPose, ObjectHypothesis
+from sensor_msgs.msg import Image
+from bboxes_ex_msgs.msg import BoundingBoxes
+from vision_msgs.msg import Detection3DArray, Detection3D, ObjectHypothesisWithPose
 from geometry_msgs.msg import Quaternion, Point
-from std_msgs.msg import Header
 from cv_bridge import CvBridge
-import image_geometry
-from transforms3d import euler
-
-import ctypes
-import struct
-from itertools import zip_longest
-
-bridge = CvBridge()
 
 def xywh2abcd(xywh, im_shape):
-    output = np.zeros((4, 2))
+        output = np.zeros((4, 2))
 
-    # Center / Width / Height -> BBox corners coordinates
-    x_min = (xywh[0] - 0.5*xywh[2]) * im_shape[1]
-    x_max = (xywh[0] + 0.5*xywh[2]) * im_shape[1]
-    y_min = (xywh[1] - 0.5*xywh[3]) * im_shape[0]
-    y_max = (xywh[1] + 0.5*xywh[3]) * im_shape[0]
+        # Center / Width / Height -> BBox corners coordinates
+        x_min = (xywh[0] - 0.5*xywh[2]) * im_shape[1]
+        x_max = (xywh[0] + 0.5*xywh[2]) * im_shape[1]
+        y_min = (xywh[1] - 0.5*xywh[3]) * im_shape[0]
+        y_max = (xywh[1] + 0.5*xywh[3]) * im_shape[0]
 
-    # A ------ B
-    # | Object |
-    # D ------ C
+        # A ------ B
+        # | Object |
+        # D ------ C
 
-    output[0][0] = x_min
-    output[0][1] = y_min
+        output[0][0] = x_min
+        output[0][1] = y_min
 
-    output[1][0] = x_max
-    output[1][1] = y_min
+        output[1][0] = x_max
+        output[1][1] = y_min
 
-    output[2][0] = x_min
-    output[2][1] = y_max
+        output[2][0] = x_min
+        output[2][1] = y_max
 
-    output[3][0] = x_max
-    output[3][1] = y_max
-    return output
-
-class yolov5_demo():
-    def __init__(self,  weights,
-                        data,
-                        imagez_height,
-                        imagez_width,
-                        conf_thres,
-                        iou_thres,
-                        max_det,
-                        device,
-                        view_img,
-                        classes,
-                        agnostic_nms,
-                        line_thickness,
-                        half,
-                        dnn
-                        ):
-        self.weights = weights
-        self.data = data
-        self.imagez_height = imagez_height
-        self.imagez_width = imagez_width
-        self.conf_thres = conf_thres
-        self.iou_thres = iou_thres
-        self.max_det = max_det
-        self.device = device
-        self.view_img = view_img
-        self.classes = classes
-        self.agnostic_nms = agnostic_nms
-        self.line_thickness = line_thickness
-        self.half = half
-        self.dnn = dnn
-
-        self.s = str()
-
-        self.load_model()
-
-    def load_model(self):
-        imgsz = (self.imagez_height, self.imagez_width)
-
-        # Load model
-        self.device = select_device(self.device)
-        self.model = DetectMultiBackend(self.weights, device=self.device, dnn=self.dnn, data=self.data)
-        stride, self.names, pt, jit, onnx, engine = self.model.stride, self.model.names, self.model.pt, self.model.jit, self.model.onnx, self.model.engine
-        imgsz = check_img_size(imgsz, s=stride)  # check image size
-
-        # Half
-        self.half &= (pt or jit or onnx or engine) and self.device.type != 'cpu'  # FP16 supported on limited backends with CUDA
-        if pt or jit:
-            self.model.model.half() if self.half else self.model.model.float()
-
-        source = 0
-        # Dataloader
-
-        cudnn.benchmark = True
-        bs = 1
-        self.vid_path, self.vid_writer = [None] * bs, [None] * bs
-
-        self.model.warmup(imgsz=(1 if pt else bs, 3, *imgsz))  # warmup
-        self.dt, self.seen = [0.0, 0.0, 0.0], 0
-
-    # callback ==========================================================================
-
-    # return ---------------------------------------
-    # 1. class (str)                                +
-    # 2. confidence (float)                         +
-    # 3. x_min, y_min, x_max, y_max (float)         +
-    # ----------------------------------------------
-    def image_callback(self, image_raw):
-        class_list = []
-        class_id = []
-        confidence_list = []
-        x_max_list = []
-        x_min_list = []
-        y_min_list = []
-        y_max_list = []
-        zed_obj = []
-        bounding_box_2d = []
-
-        image_raw = bridge.imgmsg_to_cv2(image_raw, "bgr8")
-        #LOGGER.info("Converted new image")
-        # im is  NDArray[_SCT@ascontiguousarray
-        # im = im.transpose(2, 0, 1)
-        self.stride = 32  # stride
-        self.img_size = 1920
-        img = letterbox(image_raw, self.img_size, stride=self.stride)[0]
-
-        # Convert
-        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
-        im = np.ascontiguousarray(img)
-
-        t1 = time_sync()
-        im = torch.from_numpy(im).to(self.device)
-        im = im.half() if self.half else im.float()  # uint8 to fp16/32
-        im /= 255  # 0 - 255 to 0.0 - 1.0
-        if len(im.shape) == 3:
-            im = im[None]  # expand for batch dim
-        t2 = time_sync()
-        self.dt[0] += t2 - t1
-
-        # Inference
-        save_dir = "runs/detect/exp7"
-        path = ['0']
-
-        # visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
-        pred = self.model(im, augment=False, visualize=False)
-        t3 = time_sync()
-        self.dt[1] += t3 - t2
-
-        # NMS
-        pred = non_max_suppression(pred, self.conf_thres, self.iou_thres, self.classes, self.agnostic_nms, max_det=self.max_det)
-        self.dt[2] += time_sync() - t3
-
-        # Process predictions
-        for i, det in enumerate(pred):
-            im0 = image_raw
-            self.s += f'{i}: '
-
-            # p = Path(str(p))  # to Path
-            self.s += '%gx%g ' % im.shape[2:]  # print string
-            gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-            # imc = im0.copy() if save_crop else im0  # for save_crop
-            annotator = Annotator(im0, line_width=self.line_thickness, example=str(self.names))
-            if len(det):
-                # Rescale boxes from img_size to im0 size
-                det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
-
-                # Print results
-                for c in det[:, -1].unique():
-                    n = (det[:, -1] == c).sum()  # detections per class
-                    self.s += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
-
-                for *xyxy, conf, cls in reversed(det):
-                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                    save_conf = False
-                    line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                     # Add bbox to image
-                    c = int(cls)  # integer class
-                    label = f'{self.names[c]} {conf:.2f}'
-                    annotator.box_label(xyxy, label, color=colors(c, True))
-
-                    # print(xyxy, label)
-                    class_id.append(c)
-                    class_list.append(self.names[c])
-                    confidence_list.append(conf)
-                    # tensor to float
-                    x_min_list.append(xyxy[0].item())
-                    y_min_list.append(xyxy[1].item())
-                    x_max_list.append(xyxy[2].item())
-                    y_max_list.append(xyxy[3].item())
-                     # Creating ingestable objects for the ZED SDK
-                    # obj = sl.CustomBoxObjectData()
-                    bounding_box_2d.append(xywh2abcd(xywh, im0.shape))
-                    # obj.label = cls
-                    # obj.probability = conf
-                    # obj.is_grounded = False
-                    
-
-            # Stream results
-            im0 = annotator.result()
-            #LOGGER.info("Got Detections")
-            #if self.view_img:
-                #cv2.imshow("yolov5", im0)
-                #cv2.waitKey(1)  # 1 millisecond
-            #LOGGER.info("Returned image")
-            
-            return class_id, class_list, confidence_list, x_min_list, y_min_list, x_max_list, y_max_list, bounding_box_2d
-
+        output[3][0] = x_max
+        output[3][1] = y_max
+        return output
+ 
 class yolov5_ros(Node):
     def __init__(self):
         super().__init__('yolov5_ros')
@@ -247,12 +66,6 @@ class yolov5_ros(Node):
         self.pub_image = self.create_publisher(Image, 'yolov5/image_raw', 10)
         self.pub_detection = self.create_publisher(Image, '/tempest/yolov5/image_detection', 10)
         self.pub_det3d = self.create_publisher(Detection3DArray, '{}/yolo/detected_objects'.format(self.get_namespace()), 10)
-        # self.sub_image = self.create_subscription(Image, '/tempest/stereo/left_raw/image_raw_color', self.image_callback,1)
-        # self.right_sub_image = self.create_subscription(Image, '/tempest/stereo/right_raw/image_raw_color', self.empty_callback,1)
-        #self.sub_depth = self.create_subscription(Image, '/tempest/stereo/depth/depth_registered', self.depth_callback, 1)
-        # self.left_infosub = self.create_subscription(CameraInfo, '/tempest/stereo/left_raw/camera_info', self.left_info_callback, 1)
-        # self.right_infosub = self.create_subscription(CameraInfo, '/tempest/stereo/right_raw/camera_info', self.right_info_callback, 1)
-        # self.sub_disparity = self.create_subscription(DisparityImage, '/tempest/stereo/disparity/disparity_image', self.disparity_callback, 1)
         self.image_pub = self.create_publisher(Image, '/tempest/stereo/left_raw/image_raw_color', 5)
         self.camera_model = None
         self.left_info = None
@@ -295,6 +108,10 @@ class yolov5_ros(Node):
         self.line_thickness = self.get_parameter('line_thickness').value
         self.half = self.get_parameter('half').value
         self.dnn = self.get_parameter('dnn').value
+
+        #from yolov5_demo
+        self.s = str()
+        self.load_model()
 
         self.zed = sl.Camera()
         
@@ -349,49 +166,123 @@ class yolov5_ros(Node):
             9 : "cash"
         }
 
-
-        self.yolov5 = yolov5_demo(self.weights,
-                                self.data,
-                                self.imagez_height,
-                                self.imagez_width,
-                                self.conf_thres,
-                                self.iou_thres,
-                                self.max_det,
-                                self.device,
-                                self.view_img,
-                                self.classes,
-                                self.agnostic_nms,
-                                self.line_thickness,
-                                self.half,
-                                self.dnn)
         LOGGER.info("Loaded Model")
 
         t = threading.Thread(target=self.publish_camera)
         t.start()
-    # def image_callback(self, image:Image):
-    #     if self.camera_model:       
-    #         image_raw = image
-    #         # return (class_list, confidence_list, x_min_list, y_min_list, x_max_list, y_max_list)
-    #         class_id, class_list, confidence_list, x_min_list, y_min_list, x_max_list, y_max_list, im0, zed_obj = self.yolov5.image_callback(image_raw)
-    #         bboxes=[x_min_list, y_min_list, x_max_list, y_max_list]
-    #         msg = self.yolovFive2bboxes_msgs(bboxes=[x_min_list, y_min_list, x_max_list, y_max_list], scores=confidence_list, cls=class_list, img_header=image.header)
-    #         self.pub_bbox.publish(msg)
-    #         #LOGGER.info(zed_obj)
-            
+    
+    #from outside the class
+    
+        #from yolov5_demo
+    def image_callback(self, image_raw):
+        class_list = []
+        class_id = []
+        confidence_list = []
+        x_max_list = []
+        x_min_list = []
+        y_min_list = []
+        y_max_list = []
+        bounding_box_2d = []
 
-    #         # self.zed.ingest_custom_box_objects(zed_obj)
-    #         # LOGGER.info("Ingested Detections")
-    #         # self.zed.retrieve_objects(self.objects, self.obj_runtime_param)
-    #         # LOGGER.info("Retrieved object data")
-            
-    #         objmsg, im0= self.get_obj_msg(bboxes ,image.header, class_list, confidence_list, im0)
-    #         self.pub_image.publish(self.bridge.cv2_to_imgmsg(im0, "bgr8")) 
-    #         self.pub_det3d.publish(objmsg)
-            
+        image_raw = self.bridge.imgmsg_to_cv2(image_raw, "bgr8")
 
-    #         print("start ==================")
-    #         print(class_list, confidence_list, x_min_list, y_min_list, x_max_list, y_max_list)
-    #         print("end ====================")
+        self.stride = 32  # stride
+        self.img_size = 1920
+        img = letterbox(image_raw, self.img_size, stride=self.stride)[0]
+
+        # Convert
+        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+        im = np.ascontiguousarray(img)
+
+        t1 = time_sync()
+        im = torch.from_numpy(im).to(self.device)
+        im = im.half() if self.half else im.float()  # uint8 to fp16/32
+        im /= 255  # 0 - 255 to 0.0 - 1.0
+        if len(im.shape) == 3:
+            im = im[None]  # expand for batch dim
+        t2 = time_sync()
+        self.dt[0] += t2 - t1
+
+        # Inference
+        pred = self.model(im, augment=False, visualize=False)
+        t3 = time_sync()
+        self.dt[1] += t3 - t2
+
+        # NMS
+        pred = non_max_suppression(pred, self.conf_thres, self.iou_thres, self.classes, self.agnostic_nms, max_det=self.max_det)
+        self.dt[2] += time_sync() - t3
+
+        # Process predictions
+        for i, det in enumerate(pred):
+            im0 = image_raw
+            self.s += f'{i}: '
+
+            self.s += '%gx%g ' % im.shape[2:]  # print string
+            gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+            annotator = Annotator(im0, line_width=self.line_thickness, example=str(self.names))
+            if len(det):
+                # Rescale boxes from img_size to im0 size
+                det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
+
+                # Print results
+                for c in det[:, -1].unique():
+                    n = (det[:, -1] == c).sum()  # detections per class
+                    self.s += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
+
+                for *xyxy, conf, cls in reversed(det):
+                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                     # Add bbox to image
+                    c = int(cls)  # integer class
+                    label = f'{self.names[c]} {conf:.2f}'
+                    annotator.box_label(xyxy, label, color=colors(c, True))
+
+                    # print(xyxy, label)
+                    class_id.append(c)
+                    class_list.append(self.names[c])
+                    confidence_list.append(conf)
+                    # tensor to float
+                    x_min_list.append(xyxy[0].item())
+                    y_min_list.append(xyxy[1].item())
+                    x_max_list.append(xyxy[2].item())
+                    y_max_list.append(xyxy[3].item())
+                     # Creating ingestable objects for the ZED SDK
+                    bounding_box_2d.append(xywh2abcd(xywh, im0.shape))
+
+            # Stream results
+            im0 = annotator.result()
+            
+            return class_id, class_list, confidence_list, x_min_list, y_min_list, x_max_list, y_max_list, bounding_box_2d
+    # callback ==========================================================================
+
+    # return ---------------------------------------
+    # 1. class (str)                                +
+    # 2. confidence (float)                         +
+    # 3. x_min, y_min, x_max, y_max (float)         +
+    # ----------------------------------------------
+
+    #from yolov5_demo
+    def load_model(self):
+        imgsz = (self.imagez_height, self.imagez_width)
+
+        # Load model
+        self.device = select_device(self.device)
+        self.model = DetectMultiBackend(self.weights, device=self.device, dnn=self.dnn, data=self.data)
+        stride, self.names, pt, jit, onnx, engine = self.model.stride, self.model.names, self.model.pt, self.model.jit, self.model.onnx, self.model.engine
+        imgsz = check_img_size(imgsz, s=stride)  # check image size
+
+        # Half
+        self.half &= (pt or jit or onnx or engine) and self.device.type != 'cpu'  # FP16 supported on limited backends with CUDA
+        if pt or jit:
+            self.model.model.half() if self.half else self.model.model.float()
+
+        # Dataloader
+
+        cudnn.benchmark = True
+        bs = 1
+        self.vid_path, self.vid_writer = [None] * bs, [None] * bs
+
+        self.model.warmup(imgsz=(1 if pt else bs, 3, *imgsz))  # warmup
+        self.dt, self.seen = [0.0, 0.0, 0.0], 0
     
     def publish_camera(self):
         image_left_tmp = sl.Mat()
@@ -403,9 +294,8 @@ class yolov5_ros(Node):
             image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
             ros_image = self.bridge.cv2_to_imgmsg(image,'bgr8')
             ros_image.header.frame_id = "/tempest/stereo/left_optical"
-            #LOGGER.info("Got data")
             self.image_pub.publish(ros_image)
-            class_id, class_list, confidence_list, x_min_list, y_min_list, x_max_list, y_max_list, bounding_box_2d = self.yolov5.image_callback(ros_image)
+            class_id, class_list, confidence_list, x_min_list, y_min_list, x_max_list, y_max_list, bounding_box_2d = self.image_callback(ros_image)
 
             if not (len(class_id) == len(confidence_list)):
                 LOGGER.warn(f"The number of ids returned, {len(class_id)}, is not equal to the number of detections, {len(confidence_list)}! ")
@@ -423,7 +313,6 @@ class yolov5_ros(Node):
                 classIds.append(class_id[i])
                 tmp.bounding_box_2d = bounding_box_2d[i]
                 boudningRects.append(bounding_box_2d[i])
-                # tmp.bounding_box_2d = [[x_min_list[i],[x_max_list[i]]],[y_min_list[i], y_max_list[i]]]
                 tmp.is_grounded = False # objects are moving on the floor plane and tracked in 2D only
                 objects_in.append(tmp)
             self.zed.ingest_custom_box_objects(objects_in)
@@ -440,11 +329,6 @@ class yolov5_ros(Node):
             counter = 0 #use for label lookup
             for obj in objects.object_list:
                 if (counter < len(classIds)):
-                    object_id = obj.id # Get the object id
-                    object_position = obj.position # Get the object position
-                    object_tracking_state = obj.tracking_state # Get the tracking state of the object
-                    # if object_tracking_state == sl.OBJECT_TRACK_STATE.OK :
-                    #     print("Object {0} is tracked\n".format(object_id))
                     detection = Detection3D()
                     detection.results = []
                     object_hypothesis = ObjectHypothesisWithPose()
@@ -457,18 +341,11 @@ class yolov5_ros(Node):
                     position.z = -obj.position[2]
                     
                     object_hypothesis.pose.pose.position = position
-                    # print(obj.position)
                     LOGGER.info(f"Adjusted Position {position}")
                     LOGGER.info(f"Class Ids{self.object_ids[classIds[counter]]}")
                     object_hypothesis.hypothesis.class_id = self.object_ids[classIds[counter]]
 
                     # draw cv rect
-                    rect = boudningRects[counter]
-                    x = rect[3][0]
-                    y = rect[3][1]
-                    w = rect[1][0] - x
-                    h = rect[1][1] - y
-                    #cv2.rectangle(image, (x, y), (x+w, y+h),(0, 250, 0), 2)
 
                     ros_image = self.bridge.cv2_to_imgmsg(image, "bgr8")
                     self.pub_detection.publish(ros_image)
@@ -543,15 +420,6 @@ class yolov5_ros(Node):
                         #returns score between 0 and 100 -> score wants between 0 and 1
                         object_hypothesis.hypothesis.score = obj.confidence / 100
                         LOGGER.info(obj.confidence)
-                        
-                        # hypothesis =           ObjectHypothesis()imageRelativeYaw
-                        # hyp.hypothesis.class_id = ids[idx]
-                        # hyp.hypothesis.score = float(confidences[idx])
-                        # hypothesis.id = 1
-                        # object_hypothesis.hypothesis
-                        # hypothesis.class_id = 1
-                        # hypothesis.id = 'this is the dope int id'
-
 
                         #Mapping will reject in two objects in one place
                         detection.results.append(object_hypothesis)
